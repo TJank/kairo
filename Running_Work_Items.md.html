@@ -1,0 +1,138 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Running Work Items.md</title><style>
+  :root {
+    --bg: #0b0f19;
+    --card: rgba(255,255,255,0.06);
+    --card2: rgba(255,255,255,0.04);
+    --text: #e8eefc;
+    --muted: rgba(232,238,252,0.72);
+    --ring: rgba(255,255,255,0.10);
+    --accent: #60a5fa;
+    --ok: #34d399;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7fb;
+      --card: rgba(0,0,0,0.04);
+      --card2: rgba(0,0,0,0.03);
+      --text: #0b1220;
+      --muted: rgba(11,18,32,0.72);
+      --ring: rgba(0,0,0,0.08);
+      --accent: #2563eb;
+      --ok: #059669;
+    }
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 800px at 20% 0%, rgba(96,165,250,0.18), transparent 60%),
+                radial-gradient(1200px 800px at 80% 20%, rgba(52,211,153,0.12), transparent 55%),
+                var(--bg);
+    color: var(--text);
+    font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+
+  #preview {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 20px 72px;
+  }
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: 38px;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    margin: 28px 0 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--card);
+    border: 1px solid var(--ring);
+    font-size: 18px;
+    letter-spacing: 0.02em;
+  }
+
+  ul { margin: 0; padding-left: 0; }
+  li {
+    list-style: none;
+    margin: 10px 0;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--card2);
+    border: 1px solid var(--ring);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  li > ul { margin-top: 10px; width: 100%; }
+  li > ul > li { background: transparent; border: 0; padding: 8px 0 0 34px; }
+
+  input[type="checkbox"] {
+    margin-top: 3px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ok);
+    flex: 0 0 auto;
+  }
+
+  label {
+    cursor: pointer;
+    user-select: none;
+    color: var(--text);
+  }
+
+  input[type="checkbox"]:checked + label {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+
+  /* Make the Personal block match list styling */
+  p {
+    margin: 10px 0 0;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--card2);
+    border: 1px solid var(--ring);
+  }
+
+  a { color: inherit; text-decoration: none; }
+</style></head><body id="preview">
+<h1 class="code-line" data-line-start=0 data-line-end=1 ><a id="Running_Work_Items_0"></a>Running Work Items</h1>
+<h2 class="code-line" data-line-start=2 data-line-end=3 ><a id="TD_2"></a>TD</h2>
+<ul>
+<li class="has-line-data" data-line-start="3" data-line-end="4"><input type="checkbox" id="checkbox64" checked><label for="checkbox64">Install/Setup Copilot</label></li>
+<li class="has-line-data" data-line-start="4" data-line-end="6"><input type="checkbox" id="checkbox65" checked><label for="checkbox65">Playwright Framework follow-up</label></li>
+</ul>
+<h2 class="code-line" data-line-start=6 data-line-end=7 ><a id="FE_6"></a>FE</h2>
+<ul>
+<li class="has-line-data" data-line-start="7" data-line-end="8"><input type="checkbox" id="checkbox66"><label for="checkbox66">Finalize Speedpay automation scenarios</label></li>
+<li class="has-line-data" data-line-start="8" data-line-end="10"><input type="checkbox" id="checkbox67"><label for="checkbox67">Schedule meeting with Kamal &amp; John Richardson about Web CSR</label>
+<ul>
+<li class="has-line-data" data-line-start="9" data-line-end="10"><input type="checkbox" id="checkbox68" checked><label for="checkbox68">Ask Brad if he wants to be included</label></li>
+</ul>
+</li>
+<li class="has-line-data" data-line-start="10" data-line-end="13"><input type="checkbox" id="checkbox69"><label for="checkbox69">Finish presentation and present to Brad</label>
+<ul>
+<li class="has-line-data" data-line-start="11" data-line-end="13"><input type="checkbox" id="checkbox70"><label for="checkbox70">Record demo</label></li>
+</ul>
+</li>
+</ul>
+<h2 class="code-line" data-line-start=13 data-line-end=14 ><a id="Athena_13"></a>Athena</h2>
+<ul>
+<li class="has-line-data" data-line-start="14" data-line-end="15"><input type="checkbox" id="checkbox71"><label for="checkbox71">Create sub-tasks per user story</label></li>
+<li class="has-line-data" data-line-start="15" data-line-end="16"><input type="checkbox" id="checkbox72"><label for="checkbox72">Migration testing / data gathering follow-up</label></li>
+<li class="has-line-data" data-line-start="16" data-line-end="20"><input type="checkbox" id="checkbox73"><label for="checkbox73">Automate tests discussed with Heather</label>
+<ul>
+<li class="has-line-data" data-line-start="17" data-line-end="18"><input type="checkbox" id="checkbox74"><label for="checkbox74">Write these tests out</label></li>
+<li class="has-line-data" data-line-start="18" data-line-end="20"><input type="checkbox" id="checkbox75"><label for="checkbox75">Convert to written test case</label></li>
+</ul>
+</li>
+</ul>
+<h2 class="code-line" data-line-start=20 data-line-end=21 ><a id="Personal_20"></a>Personal</h2>
+<p class="has-line-data" data-line-start="21" data-line-end="23"><input type="checkbox" id="checkbox77"><label for="checkbox77">Install Claude code and test it out!</label><br>
+<input type="checkbox" id="checkbox76"><label for="checkbox76">Fix Gamify Success? send updates?</label></p>
+
+</body></html>
