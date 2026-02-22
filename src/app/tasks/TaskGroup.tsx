@@ -133,7 +133,7 @@ function TaskRow({ task }: { task: Task }) {
             type="date"
             value={editDue}
             onChange={(e) => setEditDue(e.target.value)}
-            className="rounded-lg bg-black/40 px-2 py-1.5 text-xs text-zinc-400 ring-1 ring-white/20 outline-none"
+            className="rounded-lg bg-black/40 px-2 py-1.5 text-xs text-zinc-100 ring-1 ring-white/20 outline-none"
           />
         </div>
         <div className="flex gap-2">
@@ -400,7 +400,7 @@ export default function TaskGroup({
                   type="date"
                   value={newDue}
                   onChange={(e) => setNewDue(e.target.value)}
-                  className="rounded-lg bg-black/40 px-2 py-1.5 text-xs text-zinc-400 ring-1 ring-white/20 outline-none"
+                  className="rounded-lg bg-black/40 px-2 py-1.5 text-xs text-zinc-100 ring-1 ring-white/20 outline-none"
                 />
               </div>
               <div className="flex gap-2">

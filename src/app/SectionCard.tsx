@@ -332,7 +332,7 @@ export default function SectionCard({ section }: { section: Section }) {
                         type="date"
                         value={editDueDate}
                         onChange={(e) => setEditDueDate(e.target.value)}
-                        className="w-full rounded-lg bg-black/40 px-2 py-1.5 text-sm text-zinc-400 outline-none ring-1 ring-white/20 focus:ring-white/40"
+                        className="w-full rounded-lg bg-black/40 px-2 py-1.5 text-sm text-zinc-100 outline-none ring-1 ring-white/20 focus:ring-white/40"
                       />
                     )}
                     <div className="flex gap-2">
@@ -465,7 +465,7 @@ export default function SectionCard({ section }: { section: Section }) {
                 type="date"
                 value={newDueDate}
                 onChange={(e) => setNewDueDate(e.target.value)}
-                className="w-full rounded-lg bg-black/40 px-2 py-1.5 text-sm text-zinc-400 outline-none ring-1 ring-white/20 focus:ring-white/40"
+                className="w-full rounded-lg bg-black/40 px-2 py-1.5 text-sm text-zinc-100 outline-none ring-1 ring-white/20 focus:ring-white/40"
               />
             )}
             <div className="flex gap-2">
