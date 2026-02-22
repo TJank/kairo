@@ -5,7 +5,6 @@ import {
   parse,
   set,
   startOfDay,
-  endOfDay,
 } from "date-fns";
 
 const TZ = process.env.DASH_TIMEZONE || "America/New_York";
@@ -31,7 +30,6 @@ function normalize(s: string) {
 }
 
 function parseProjectKey(text: string): { key?: string; rest: string } {
-  // Accept patterns like "FE: ..." or "ATHENA - ..."
   const m = text.match(/^\s*([A-Za-z][A-Za-z0-9_-]{1,15})\s*[:\-]\s*(.+)$/);
   if (m) return { key: m[1].toUpperCase(), rest: m[2] };
   return { rest: text };
@@ -49,11 +47,6 @@ function looksWorkRelated(text: string) {
 }
 
 function parseTimeRange(rest: string): { startMin?: number; endMin?: number; title: string } {
-  // Handles:
-  // - 9:00-9:30am
-  // - 9-930
-  // - 9-9:30
-  // - 9am-930am
   const r = rest.match(
     /(.*?)(\b\d{1,2}(?::\d{2})?\s*(?:am|pm)?\b)\s*(?:-|–|to)\s*(\b\d{1,4}(?::\d{2})?\s*(?:am|pm)?\b)(.*)/i,
   );
@@ -81,19 +74,13 @@ function parseTimeRange(rest: string): { startMin?: number; endMin?: number; tit
     if (hasAmPm) return start;
     const endAmPm = end.match(/\b(am|pm)\b/i)?.[1];
     if (endAmPm) return start + " " + endAmPm;
-    // default assumption if neither specifies am/pm
     return start + " am";
   }
 
   function parseLooseTime(str: string) {
     const s = str.toLowerCase().replace(/\s+/g, "");
-    // 930am -> 9:30 am
     const m = s.match(/^(\d{1,2})(\d{2})(am|pm)$/);
-    if (m) return parse(`${m[1]}:${m[2]} ${m[3]}`,
-      "h:mm a",
-      now,
-    );
-    // 9am / 9:30am
+    if (m) return parse(`${m[1]}:${m[2]} ${m[3]}`, "h:mm a", now);
     const t1 = parse(str, "h:mm a", now);
     if (!isNaN(t1.getTime())) return t1;
     const t2 = parse(str, "h a", now);
@@ -113,19 +100,18 @@ function parseTimeRange(rest: string): { startMin?: number; endMin?: number; tit
   return { title, startMin, endMin };
 }
 
-function parseDays(text: string): string | undefined {
+function parseDaysNumbers(text: string): number[] | undefined {
   const t = text.toLowerCase();
-  if (t.includes("mon-fri") || t.includes("m-f") || t.includes("m–f")) return "1,2,3,4,5";
-  if (t.includes("mon-thu") || t.includes("mon-thurs")) return "1,2,3,4";
-  if (t.includes("weekdays")) return "1,2,3,4,5";
-  if (t.includes("daily")) return "0,1,2,3,4,5,6";
+  if (t.includes("mon-fri") || t.includes("m-f") || t.includes("m–f")) return [1, 2, 3, 4, 5];
+  if (t.includes("mon-thu") || t.includes("mon-thurs")) return [1, 2, 3, 4];
+  if (t.includes("weekdays")) return [1, 2, 3, 4, 5];
+  if (t.includes("daily")) return [0, 1, 2, 3, 4, 5, 6];
   return undefined;
 }
 
 function nextWorkStartDate() {
   const d = new Date();
   const day = d.getDay();
-  // 0 Sun, 6 Sat -> next Monday
   if (day === 0 || day === 6) return startOfDay(nextMonday(d));
   return startOfDay(addDays(d, 1));
 }
@@ -136,15 +122,13 @@ function tomorrowStartDate() {
 
 export async function ingestMessage(raw: string) {
   const text = normalize(raw);
-  const lower = text.toLowerCase();
 
-  // crude split for multi-items
   const parts = text
     .split(/\n|\s*;\s*/)
     .map((p) => normalize(p))
     .filter(Boolean);
 
-  const created: any[] = [];
+  const created: { type: string; id: string; title?: string; text?: string }[] = [];
 
   for (const part of parts) {
     const pLower = part.toLowerCase();
@@ -173,7 +157,6 @@ export async function ingestMessage(raw: string) {
       : null;
 
     if (mode === "todo") {
-      // Due parsing: "before Friday" -> Friday 5pm; "by Friday" -> all-day Friday
       const dueBefore = rest.match(/\b(before|by)\s+(mon|tue|tues|tuesday|wed|wednesday|thu|thurs|thursday|fri|friday|sat|saturday|sun|sunday)\b/i);
       let dueAt: Date | null = null;
       let dueDate: Date | null = null;
@@ -182,16 +165,18 @@ export async function ingestMessage(raw: string) {
         const word = dueBefore[1].toLowerCase();
         const dayName = dueBefore[2].toLowerCase();
         const base = new Date();
-        const map: any = { sun:0,sunday:0, mon:1, monday:1, tue:2, tues:2, tuesday:2, wed:3, wednesday:3, thu:4, thurs:4, thursday:4, fri:5, friday:5, sat:6, saturday:6 };
+        const map: Record<string, number> = {
+          sun: 0, sunday: 0, mon: 1, monday: 1, tue: 2, tues: 2, tuesday: 2,
+          wed: 3, wednesday: 3, thu: 4, thurs: 4, thursday: 4,
+          fri: 5, friday: 5, sat: 6, saturday: 6,
+        };
         const target = map[dayName];
         if (target != null) {
           const d = new Date(base);
-          // advance to next target day (including same day if still upcoming)
-          while (d.getDay() !== target) d.setDate(d.getDate()+1);
+          while (d.getDay() !== target) d.setDate(d.getDate() + 1);
           if (word === "before") {
             dueAt = set(d, { hours: 17, minutes: 0, seconds: 0, milliseconds: 0 });
           } else {
-            // "by" -> all-day
             dueDate = startOfDay(d);
           }
         }
@@ -211,14 +196,13 @@ export async function ingestMessage(raw: string) {
       continue;
     }
 
-    // Event / recurring event
-    const days = parseDays(rest);
+    const dayNums = parseDaysNumbers(rest);
     const tr = parseTimeRange(rest);
     const title = tr.title || normalize(rest);
 
     const category = mode === "work" ? "WORK" : "PERSONAL";
 
-    if (days && tr.startMin != null && tr.endMin != null) {
+    if (dayNums && tr.startMin != null && tr.endMin != null) {
       const startDate = mode === "work" ? nextWorkStartDate() : tomorrowStartDate();
       const r = await prisma.recurringEvent.create({
         data: {
@@ -226,14 +210,15 @@ export async function ingestMessage(raw: string) {
           category,
           projectId: project?.id,
           startDate,
-          daysOfWeek: days,
           startMin: tr.startMin,
           endMin: tr.endMin,
+          days: {
+            create: dayNums.map((day) => ({ day })),
+          },
         },
       });
       created.push({ type: "recurring", id: r.id, title: r.title });
     } else if (tr.startMin != null && tr.endMin != null) {
-      // one-off event: assume tomorrow at that time
       const baseDate = mode === "work" ? nextWorkStartDate() : tomorrowStartDate();
       const startAt = set(baseDate, {
         hours: Math.floor(tr.startMin / 60),
@@ -259,7 +244,6 @@ export async function ingestMessage(raw: string) {
       });
       created.push({ type: "event", id: e.id, title: e.title });
     } else {
-      // fallback: create all-day task tomorrow
       const dueDate = startOfDay(addDays(new Date(), 1));
       const t = await prisma.task.create({
         data: {

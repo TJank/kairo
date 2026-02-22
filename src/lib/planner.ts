@@ -18,7 +18,6 @@ export type CalendarEntry =
       id: string;
       title: string;
       allDay: boolean;
-      // for all-day tasks we store as date-only ISO in startAt
       startAt: string;
       endAt: string;
       category: string;
@@ -27,15 +26,6 @@ export type CalendarEntry =
       projectLabel?: string;
       projectColor?: string;
     };
-
-function parseDays(daysOfWeek: string): number[] {
-  return daysOfWeek
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((n) => Number(n))
-    .filter((n) => Number.isFinite(n) && n >= 0 && n <= 6);
-}
 
 function minsToTime(date: Date, mins: number) {
   const d = new Date(date);
@@ -67,25 +57,22 @@ export async function getWeekEntries(from: Date, to: Date) {
     include: { project: true },
   });
 
-  // Recurring event occurrences (generated on the fly)
+  // Recurring event occurrences (generated on the fly using junction table)
   const recurring = await prisma.recurringEvent.findMany({
     where: {
-      // series started before end of window
       startDate: { lte: to },
     },
-    include: { project: true },
+    include: { project: true, days: true },
   });
 
   const recurringOccurrences: CalendarEntry[] = [];
   for (const r of recurring) {
-    const days = new Set(parseDays(r.daysOfWeek));
-    // Generate day by day through the window
+    const days = new Set(r.days.map((d) => d.day));
     for (let d = startOfDay(from); d < to; d = addDays(d, 1)) {
       if (d < startOfDay(r.startDate)) continue;
       if (!days.has(d.getDay())) continue;
       const startAt = minsToTime(d, r.startMin);
       const endAt = minsToTime(d, r.endMin);
-      // skip if outside window
       if (startAt >= to || endAt <= from) continue;
 
       recurringOccurrences.push({
@@ -116,7 +103,6 @@ export async function getWeekEntries(from: Date, to: Date) {
 
   const taskEntries: CalendarEntry[] = tasks.map((t) => {
     if (t.dueAt) {
-      // time-based task: show at due time for 30 mins
       const startAt = t.dueAt;
       const endAt = new Date(t.dueAt.getTime() + 30 * 60 * 1000);
       return {
