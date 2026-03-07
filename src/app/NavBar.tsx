@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/app/theme/ThemeToggle";
+import KairoLogo from "@/app/KairoLogo";
 
 const NAV_LINKS = [
   { href: "/", label: "Whiteboard" },
@@ -14,9 +15,12 @@ export default function NavBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky top-0 z-30 border-b border-white/8 bg-zinc-950/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-30 border-b border-white/8 bg-[var(--bg-nav)] backdrop-blur-md">
       <div className="mx-auto flex max-w-[1400px] items-center gap-6 px-8 py-3">
-        <span className="text-base font-semibold tracking-tight text-zinc-100">Kairo</span>
+        <span className="flex items-center gap-2 text-base font-semibold tracking-tight text-zinc-100">
+          <KairoLogo />
+          Kairo
+        </span>
 
         <div className="flex items-center gap-1">
           {NAV_LINKS.map((link) => {

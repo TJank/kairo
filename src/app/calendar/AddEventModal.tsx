@@ -2,18 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { format } from "date-fns";
-import { createEvent } from "@/app/actions/calendar";
+import { createEvent, createProject } from "@/app/actions/calendar";
+import { COLOR_OPTIONS, COLOR_SWATCH } from "@/app/calendar/colors";
 
 type Project = { id: string; key: string; name: string; color: string };
 
 const DAYS_OF_WEEK = [
-  { label: "Sun", value: 0 },
-  { label: "Mon", value: 1 },
-  { label: "Tue", value: 2 },
-  { label: "Wed", value: 3 },
-  { label: "Thu", value: 4 },
-  { label: "Fri", value: 5 },
-  { label: "Sat", value: 6 },
+  { label: "Su", value: 0 },
+  { label: "Mo", value: 1 },
+  { label: "Tu", value: 2 },
+  { label: "We", value: 3 },
+  { label: "Th", value: 4 },
+  { label: "Fr", value: 5 },
+  { label: "Sa", value: 6 },
 ];
 
 function minsToTimeStr(mins: number) {
@@ -27,10 +28,14 @@ function timeStrToMins(s: string) {
   return h * 60 + (m ?? 0);
 }
 
+function dateToInputValue(d: Date) {
+  return format(d, "yyyy-MM-dd");
+}
+
 export default function AddEventModal({
   date,
   startSlotMin,
-  projects,
+  projects: initialProjects,
   onClose,
   onCreated,
 }: {
@@ -42,12 +47,25 @@ export default function AddEventModal({
 }) {
   const endSlotMin = Math.min(startSlotMin + 60, 23 * 60 + 59);
 
+  // Core fields
   const [title, setTitle] = useState("");
-  const [projectId, setProjectId] = useState("");
+  const [dateVal, setDateVal] = useState(dateToInputValue(date));
   const [startTime, setStartTime] = useState(minsToTimeStr(startSlotMin));
   const [endTime, setEndTime] = useState(minsToTimeStr(endSlotMin));
+
+  // Group
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [showNewGroup, setShowNewGroup] = useState(false);
+  const [newKey, setNewKey] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newColor, setNewColor] = useState("blue");
+  const [groupError, setGroupError] = useState("");
+
+  // Recurrence
   const [recurrence, setRecurrence] = useState<"none" | "mon-fri" | "daily" | "custom">("none");
   const [customDays, setCustomDays] = useState<number[]>([]);
+
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -57,20 +75,6 @@ export default function AddEventModal({
     );
   }
 
-  function buildStartAt() {
-    const [h, m] = startTime.split(":").map(Number);
-    const d = new Date(date);
-    d.setHours(h, m, 0, 0);
-    return d.toISOString();
-  }
-
-  function buildEndAt() {
-    const [h, m] = endTime.split(":").map(Number);
-    const d = new Date(date);
-    d.setHours(h, m, 0, 0);
-    return d.toISOString();
-  }
-
   function getRecurrenceDays(): number[] | undefined {
     if (recurrence === "none") return undefined;
     if (recurrence === "mon-fri") return [1, 2, 3, 4, 5];
@@ -78,20 +82,46 @@ export default function AddEventModal({
     return customDays.length > 0 ? customDays : undefined;
   }
 
+  function buildStartAt() {
+    const [h, m] = startTime.split(":").map(Number);
+    const d = new Date(dateVal + "T00:00:00");
+    d.setHours(h, m, 0, 0);
+    return d.toISOString();
+  }
+
+  function buildEndAt() {
+    const [h, m] = endTime.split(":").map(Number);
+    const d = new Date(dateVal + "T00:00:00");
+    d.setHours(h, m, 0, 0);
+    return d.toISOString();
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setError("Title is required"); return; }
     if (timeStrToMins(endTime) <= timeStrToMins(startTime)) {
-      setError("End must be after start");
+      setError("End time must be after start time");
       return;
     }
 
     startTransition(async () => {
+      let projectId = selectedProjectId;
+
+      if (showNewGroup && newKey.trim() && newName.trim()) {
+        const k = newKey.trim().toUpperCase();
+        const groupResult = await createProject(k, newName.trim(), newColor);
+        if (!groupResult || "error" in groupResult) {
+          setGroupError(groupResult?.error ?? "Failed to create group");
+          return;
+        }
+        projectId = groupResult.id;
+      }
+
       const result = await createEvent(
         title,
         buildStartAt(),
         buildEndAt(),
-        projectId || null,
+        projectId,
         getRecurrenceDays()
       );
       if (result?.error) { setError(result.error); return; }
@@ -101,29 +131,48 @@ export default function AddEventModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-16">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-3xl bg-zinc-900 p-6 ring-1 ring-white/10 shadow-2xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Add Event</h2>
-          <div className="text-sm text-zinc-400">{format(date, "EEE, MMM d")}</div>
+
+      <div className="relative w-full max-w-lg rounded-3xl bg-zinc-900 shadow-2xl ring-1 ring-white/10">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/8">
+          <h2 className="text-xl font-semibold tracking-tight">New Event</h2>
+          <button
+            onClick={onClose}
+            className="rounded-lg px-2 py-1 text-sm text-zinc-400 hover:bg-white/10 transition-colors"
+          >
+            ✕
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+
+          {/* Title */}
           <div>
             <input
               value={title}
               onChange={(e) => { setTitle(e.target.value); setError(""); }}
-              placeholder="Event title…"
-              className="w-full rounded-xl bg-black/40 px-3 py-2.5 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+              placeholder="Event title"
               autoFocus
+              className="w-full rounded-xl bg-black/40 px-4 py-3 text-base outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30 placeholder:text-zinc-500"
             />
-            {error && <p className="mt-1 text-xs text-rose-400">{error}</p>}
+            {error && <p className="mt-1.5 text-xs text-rose-400">{error}</p>}
           </div>
 
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-xs text-zinc-400 mb-1">Start</label>
+          {/* Date + Time */}
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Date</label>
+              <input
+                type="date"
+                value={dateVal}
+                onChange={(e) => setDateVal(e.target.value)}
+                className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Start</label>
               <input
                 type="time"
                 value={startTime}
@@ -131,8 +180,8 @@ export default function AddEventModal({
                 className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
               />
             </div>
-            <div className="flex-1">
-              <label className="block text-xs text-zinc-400 mb-1">End</label>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">End</label>
               <input
                 type="time"
                 value={endTime}
@@ -142,75 +191,146 @@ export default function AddEventModal({
             </div>
           </div>
 
-          {projects.length > 0 && (
-            <div>
-              <label className="block text-xs text-zinc-400 mb-1">Category (optional)</label>
-              <select
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
-              >
-                <option value="">No category</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    [{p.key}] {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
+          {/* Recurrence */}
           <div>
-            <label className="block text-xs text-zinc-400 mb-2">Recurrence</label>
+            <label className="block text-xs font-medium text-zinc-400 mb-2">Repeats</label>
             <div className="flex gap-2 flex-wrap">
               {(["none", "mon-fri", "daily", "custom"] as const).map((r) => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => setRecurrence(r)}
-                  className={`rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
                     recurrence === r
-                      ? "bg-white/15 ring-white/30"
-                      : "bg-black/30 ring-white/10 hover:bg-white/10"
+                      ? "bg-white/15 text-white ring-white/30"
+                      : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/8 hover:text-zinc-200"
                   }`}
                 >
-                  {r === "none" ? "One-time" : r === "mon-fri" ? "Mon–Fri" : r === "daily" ? "Daily" : "Custom"}
+                  {r === "none" ? "One-time" : r === "mon-fri" ? "Mon – Fri" : r === "daily" ? "Every day" : "Custom"}
                 </button>
               ))}
             </div>
 
             {recurrence === "custom" && (
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex gap-1.5">
                 {DAYS_OF_WEEK.map((d) => (
                   <button
                     key={d.value}
                     type="button"
                     onClick={() => toggleCustomDay(d.value)}
-                    className={`h-8 w-8 rounded-full text-xs ring-1 transition-colors ${
+                    className={`h-9 w-9 rounded-full text-xs font-medium ring-1 transition-colors ${
                       customDays.includes(d.value)
-                        ? "bg-white/20 ring-white/40"
-                        : "bg-black/30 ring-white/10 hover:bg-white/10"
+                        ? "bg-white/20 text-white ring-white/40"
+                        : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/10"
                     }`}
                   >
-                    {d.label.slice(0, 1)}
+                    {d.label}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
+          {/* Group */}
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-2">Group</label>
+            <div className="flex flex-wrap gap-2">
+              {/* No group */}
+              <button
+                type="button"
+                onClick={() => { setSelectedProjectId(null); setShowNewGroup(false); }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
+                  selectedProjectId === null && !showNewGroup
+                    ? "bg-white/15 text-white ring-white/30"
+                    : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/8 hover:text-zinc-200"
+                }`}
+              >
+                None
+              </button>
+
+              {/* Existing projects */}
+              {projects.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => { setSelectedProjectId(p.id); setShowNewGroup(false); }}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
+                    selectedProjectId === p.id && !showNewGroup
+                      ? "bg-white/15 text-white ring-white/30"
+                      : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/8 hover:text-zinc-200"
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full flex-shrink-0 ${COLOR_SWATCH[p.color] ?? "bg-zinc-500"}`} />
+                  {p.name}
+                </button>
+              ))}
+
+              {/* Create new group */}
+              <button
+                type="button"
+                onClick={() => { setShowNewGroup(true); setSelectedProjectId(null); }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
+                  showNewGroup
+                    ? "bg-white/15 text-white ring-white/30"
+                    : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/8 hover:text-zinc-200"
+                }`}
+              >
+                + New group
+              </button>
+            </div>
+
+            {/* Inline new group form */}
+            {showNewGroup && (
+              <div className="mt-3 rounded-xl bg-black/30 p-4 ring-1 ring-white/10 space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    value={newKey}
+                    onChange={(e) => { setNewKey(e.target.value.toUpperCase()); setGroupError(""); }}
+                    placeholder="KEY"
+                    maxLength={6}
+                    className="w-20 rounded-lg bg-black/40 px-2 py-1.5 text-sm font-mono outline-none ring-1 ring-white/20 focus:ring-white/40 placeholder:text-zinc-600"
+                  />
+                  <input
+                    value={newName}
+                    onChange={(e) => { setNewName(e.target.value); setGroupError(""); }}
+                    placeholder="Group name"
+                    className="flex-1 rounded-lg bg-black/40 px-2 py-1.5 text-sm outline-none ring-1 ring-white/20 focus:ring-white/40 placeholder:text-zinc-600"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-zinc-500">Color</span>
+                  {COLOR_OPTIONS.map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => setNewColor(c.value)}
+                      title={c.value}
+                      className={`h-6 w-6 rounded-full ${c.swatch} transition-all ${
+                        newColor === c.value
+                          ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900 opacity-100"
+                          : "opacity-50 hover:opacity-80"
+                      }`}
+                    />
+                  ))}
+                </div>
+                {groupError && <p className="text-xs text-rose-400">{groupError}</p>}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
           <div className="flex gap-3 pt-1">
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 rounded-xl bg-white/15 py-2.5 text-sm font-medium hover:bg-white/20 disabled:opacity-50 transition-colors"
+              className="flex-1 rounded-xl bg-white/15 py-2.5 text-sm font-semibold hover:bg-white/20 disabled:opacity-50 transition-colors"
             >
               {isPending ? "Creating…" : "Create Event"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl bg-black/30 px-4 py-2.5 text-sm ring-1 ring-white/10 hover:bg-white/10 transition-colors"
+              className="rounded-xl bg-black/30 px-5 py-2.5 text-sm text-zinc-400 ring-1 ring-white/10 hover:bg-white/8 transition-colors"
             >
               Cancel
             </button>

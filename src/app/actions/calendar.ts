@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { startOfDay } from "date-fns";
 import { prisma } from "@/lib/prisma";
 
 // ─── Project / Category Actions ──────────────────────────────────────────────
@@ -11,9 +12,10 @@ export async function createProject(key: string, name: string, color: string) {
   if (!k || !n) return { error: "Key and name are required" };
 
   try {
-    await prisma.project.create({ data: { key: k, name: n, color } });
+    const project = await prisma.project.create({ data: { key: k, name: n, color } });
     revalidatePath("/calendar");
     revalidatePath("/tasks");
+    return { id: project.id };
   } catch {
     return { error: `Key "${k}" is already in use` };
   }
@@ -93,5 +95,83 @@ export async function createEvent(
 
 export async function deleteEvent(id: string) {
   await prisma.event.delete({ where: { id } });
+  revalidatePath("/calendar");
+}
+
+export async function updateEvent(
+  id: string,
+  title: string,
+  startAt: string,
+  endAt: string,
+  projectId?: string | null
+) {
+  const t = title.trim();
+  if (!t) return { error: "Title is required" };
+  const start = new Date(startAt);
+  const end = new Date(endAt);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Invalid times" };
+  if (end <= start) return { error: "End must be after start" };
+  const category = projectId ? "WORK" : "PERSONAL";
+  await prisma.event.update({
+    where: { id },
+    data: { title: t, startAt: start, endAt: end, projectId: projectId ?? null, category },
+  });
+  revalidatePath("/calendar");
+}
+
+export async function deleteRecurringEvent(id: string) {
+  await prisma.recurringEvent.delete({ where: { id } });
+  revalidatePath("/calendar");
+}
+
+export async function updateRecurringEvent(
+  id: string,
+  title: string,
+  startMin: number,
+  endMin: number,
+  days: number[],
+  projectId?: string | null
+) {
+  const t = title.trim();
+  if (!t) return { error: "Title is required" };
+  if (days.length === 0) return { error: "Select at least one day" };
+  const category = projectId ? "WORK" : "PERSONAL";
+  await prisma.recurringEventDay.deleteMany({ where: { recurringEventId: id } });
+  await prisma.recurringEvent.update({
+    where: { id },
+    data: {
+      title: t,
+      startMin,
+      endMin,
+      category,
+      projectId: projectId ?? null,
+      days: { create: days.map((day) => ({ day })) },
+    },
+  });
+  revalidatePath("/calendar");
+}
+
+export async function getRecurringEventData(id: string) {
+  const r = await prisma.recurringEvent.findUnique({
+    where: { id },
+    include: { days: true },
+  });
+  if (!r) return null;
+  return {
+    title: r.title,
+    startMin: r.startMin,
+    endMin: r.endMin,
+    projectId: r.projectId,
+    days: r.days.map((d) => d.day),
+  };
+}
+
+export async function cancelRecurringOccurrence(recurringEventId: string, date: Date) {
+  await prisma.recurringEventException.create({
+    data: {
+      recurringEventId,
+      date: startOfDay(date),
+    },
+  });
   revalidatePath("/calendar");
 }

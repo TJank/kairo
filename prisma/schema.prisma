@@ -109,10 +109,21 @@ model RecurringEvent {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  project Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  days    RecurringEventDay[]
+  project    Project?                  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  days       RecurringEventDay[]
+  exceptions RecurringEventException[]
 
   @@index([projectId])
+}
+
+model RecurringEventException {
+  id               String         @id @default(cuid())
+  recurringEventId String
+  date             DateTime       // midnight of the cancelled occurrence date
+  recurringEvent   RecurringEvent @relation(fields: [recurringEventId], references: [id], onDelete: Cascade)
+
+  @@unique([recurringEventId, date])
+  @@index([recurringEventId])
 }
 
 model RecurringEventDay {

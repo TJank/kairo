@@ -2,30 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { createProject, updateProject, deleteProject } from "@/app/actions/calendar";
+import { COLOR_OPTIONS, COLOR_SWATCH } from "@/app/calendar/colors";
 
 type Project = {
   id: string;
   key: string;
   name: string;
   color: string;
-};
-
-const COLOR_OPTIONS = [
-  { value: "blue", swatch: "bg-blue-500", label: "Blue" },
-  { value: "purple", swatch: "bg-purple-500", label: "Purple" },
-  { value: "green", swatch: "bg-emerald-500", label: "Green" },
-  { value: "red", swatch: "bg-red-500", label: "Red" },
-  { value: "yellow", swatch: "bg-yellow-500", label: "Yellow" },
-  { value: "orange", swatch: "bg-orange-500", label: "Orange" },
-];
-
-const COLOR_SWATCH: Record<string, string> = {
-  blue: "bg-blue-500",
-  purple: "bg-purple-500",
-  green: "bg-emerald-500",
-  red: "bg-red-500",
-  yellow: "bg-yellow-500",
-  orange: "bg-orange-500",
 };
 
 export default function ManageCategoriesModal({
@@ -123,7 +106,7 @@ export default function ManageCategoriesModal({
                         key={c.value}
                         type="button"
                         onClick={() => setEditColor(c.value)}
-                        title={c.label}
+                        title={c.value}
                         className={`h-6 w-6 rounded-full ${c.swatch} transition-all ${
                           editColor === c.value ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900" : "opacity-60"
                         }`}
@@ -215,7 +198,7 @@ export default function ManageCategoriesModal({
                   key={c.value}
                   type="button"
                   onClick={() => setNewColor(c.value)}
-                  title={c.label}
+                  title={c.value}
                   className={`h-6 w-6 rounded-full ${c.swatch} transition-all ${
                     newColor === c.value ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900" : "opacity-60 hover:opacity-100"
                   }`}

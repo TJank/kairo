@@ -10,6 +10,7 @@ import {
 } from "date-fns";
 import { colorClasses } from "@/app/calendar/colors";
 import AddEventModal from "@/app/calendar/AddEventModal";
+import EventPopover, { type PopoverEntry } from "@/app/calendar/EventPopover";
 
 type Entry = {
   kind: "event" | "task";
@@ -20,6 +21,7 @@ type Entry = {
   category: string;
   allDay?: boolean;
   done?: boolean;
+  recurring?: boolean;
   projectKey?: string;
   projectLabel?: string;
   projectColor?: string;
@@ -92,6 +94,7 @@ export default function DayGrid({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [addModal, setAddModal] = useState<{ date: Date; startSlotMin: number } | null>(null);
+  const [popoverTarget, setPopoverTarget] = useState<{ entry: PopoverEntry; x: number; y: number } | null>(null);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
 
@@ -119,13 +122,20 @@ export default function DayGrid({
       const now = new Date();
       const isToday = format(now, "yyyy-MM-dd") === dayKey;
       if (isToday) {
-        const slot = clamp(slotIndexFromDate(now), 0, slotCount - 1);
-        setTimeout(() => {
-          const el = gridRef.current?.querySelector(
-            `[data-slot="${slot}"]`
-          ) as HTMLElement | null;
-          el?.scrollIntoView({ block: "start", inline: "nearest" });
-        }, 50);
+        const h = now.getHours();
+        const slot = h >= 12
+          ? (12 - START_HOUR) * (60 / SLOT_MIN)
+          : h >= 7
+          ? (7 - START_HOUR) * (60 / SLOT_MIN)
+          : null;
+        if (slot !== null) {
+          setTimeout(() => {
+            const el = gridRef.current?.querySelector(
+              `[data-slot="${slot}"]`
+            ) as HTMLElement | null;
+            el?.scrollIntoView({ block: "start", inline: "nearest" });
+          }, 50);
+        }
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -152,13 +162,20 @@ export default function DayGrid({
         const now = new Date();
         const isToday = format(now, "yyyy-MM-dd") === dayKey;
         if (isToday) {
-          const slot = clamp(slotIndexFromDate(now), 0, slotCount - 1);
-          setTimeout(() => {
-            const el = gridRef.current?.querySelector(
-              `[data-slot="${slot}"]`
-            ) as HTMLElement | null;
-            el?.scrollIntoView({ block: "start", inline: "nearest" });
-          }, 50);
+          const h = now.getHours();
+          const slot = h >= 12
+            ? (12 - START_HOUR) * (60 / SLOT_MIN)
+            : h >= 7
+            ? (7 - START_HOUR) * (60 / SLOT_MIN)
+            : null;
+          if (slot !== null) {
+            setTimeout(() => {
+              const el = gridRef.current?.querySelector(
+                `[data-slot="${slot}"]`
+              ) as HTMLElement | null;
+              el?.scrollIntoView({ block: "start", inline: "nearest" });
+            }, 50);
+          }
         }
       } catch (e: unknown) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
@@ -380,7 +397,7 @@ export default function DayGrid({
                     return (
                       <div
                         key={ev.id + ev.startAt}
-                        className={`absolute overflow-hidden rounded-lg px-2 py-1 text-[11px] ring-1 ${baseClasses} z-10`}
+                        className={`absolute cursor-pointer overflow-hidden rounded-lg px-2 py-1 text-[11px] ring-1 ${baseClasses} z-10`}
                         style={{
                           top,
                           height: Math.max(18, h),
@@ -388,6 +405,10 @@ export default function DayGrid({
                           width: `calc(${colW}% - 8px)`,
                         }}
                         title={ev.title}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPopoverTarget({ entry: ev, x: e.clientX, y: e.clientY });
+                        }}
                       >
                         <div className="truncate font-medium">
                           {displayPrefix(ev)}{ev.title}
@@ -420,6 +441,17 @@ export default function DayGrid({
             load();
             onRefresh?.();
           }}
+        />
+      )}
+
+      {popoverTarget && (
+        <EventPopover
+          entry={popoverTarget.entry}
+          x={popoverTarget.x}
+          y={popoverTarget.y}
+          projects={projects}
+          onDismiss={() => setPopoverTarget(null)}
+          onRefresh={() => { load(); onRefresh?.(); }}
         />
       )}
     </>

@@ -17,7 +17,7 @@ export default function IngestInput({ onRefresh }: { onRefresh: () => void }) {
         const res = await fetch("/api/ingest", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text }),
+          body: JSON.stringify({ text }),
         });
         const data = await res.json();
 

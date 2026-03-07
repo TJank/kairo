@@ -9,6 +9,7 @@ export type CalendarEntry =
       startAt: string;
       endAt: string;
       category: string;
+      recurring: boolean;
       projectKey?: string;
       projectLabel?: string;
       projectColor?: string;
@@ -22,6 +23,7 @@ export type CalendarEntry =
       endAt: string;
       category: string;
       done: boolean;
+      recurring: boolean;
       projectKey?: string;
       projectLabel?: string;
       projectColor?: string;
@@ -62,15 +64,17 @@ export async function getWeekEntries(from: Date, to: Date) {
     where: {
       startDate: { lte: to },
     },
-    include: { project: true, days: true },
+    include: { project: true, days: true, exceptions: true },
   });
 
   const recurringOccurrences: CalendarEntry[] = [];
   for (const r of recurring) {
     const days = new Set(r.days.map((d) => d.day));
+    const exceptionDates = new Set(r.exceptions.map((e) => startOfDay(e.date).toISOString()));
     for (let d = startOfDay(from); d < to; d = addDays(d, 1)) {
       if (d < startOfDay(r.startDate)) continue;
       if (!days.has(d.getDay())) continue;
+      if (exceptionDates.has(d.toISOString())) continue;
       const startAt = minsToTime(d, r.startMin);
       const endAt = minsToTime(d, r.endMin);
       if (startAt >= to || endAt <= from) continue;
@@ -82,6 +86,7 @@ export async function getWeekEntries(from: Date, to: Date) {
         startAt: startAt.toISOString(),
         endAt: endAt.toISOString(),
         category: r.category,
+        recurring: true,
         projectKey: r.project?.key ?? undefined,
         projectLabel: r.project?.name ?? undefined,
         projectColor: r.project?.color ?? undefined,
@@ -96,6 +101,7 @@ export async function getWeekEntries(from: Date, to: Date) {
     startAt: e.startAt.toISOString(),
     endAt: e.endAt.toISOString(),
     category: e.category,
+    recurring: false,
     projectKey: e.project?.key ?? undefined,
     projectLabel: e.project?.name ?? undefined,
     projectColor: e.project?.color ?? undefined,
@@ -114,6 +120,7 @@ export async function getWeekEntries(from: Date, to: Date) {
         endAt: endAt.toISOString(),
         category: t.category,
         done: t.done,
+        recurring: false,
         projectKey: t.project?.key ?? undefined,
         projectLabel: t.project?.name ?? undefined,
         projectColor: t.project?.color ?? undefined,
@@ -132,6 +139,7 @@ export async function getWeekEntries(from: Date, to: Date) {
       endAt: endAt.toISOString(),
       category: t.category,
       done: t.done,
+      recurring: false,
       projectKey: t.project?.key ?? undefined,
       projectLabel: t.project?.name ?? undefined,
       projectColor: t.project?.color ?? undefined,

@@ -6,12 +6,14 @@ import DayGrid from "./DayGrid";
 import MonthGrid from "./MonthGrid";
 import ManageCategoriesModal from "./ManageCategoriesModal";
 import IngestInput from "./IngestInput";
+import AddEventModal from "./AddEventModal";
 
 type Project = { id: string; key: string; name: string; color: string };
 type View = "week" | "day" | "month";
 
 export default function CalendarClient({ projects }: { projects: Project[] }) {
   const [showManage, setShowManage] = useState(false);
+  const [showAddEvent, setShowAddEvent] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [view, setView] = useState<View>("week");
   const [selectedDay, setSelectedDay] = useState(() => new Date());
@@ -52,6 +54,12 @@ export default function CalendarClient({ projects }: { projects: Project[] }) {
             ))}
           </div>
           <button
+            onClick={() => setShowAddEvent(true)}
+            className="rounded-2xl bg-white/15 px-5 py-2.5 text-sm font-medium hover:bg-white/20 transition-colors"
+          >
+            + Add Event
+          </button>
+          <button
             onClick={() => setShowManage(true)}
             className="rounded-2xl bg-white/10 px-5 py-2.5 text-sm font-medium hover:bg-white/15 transition-colors"
           >
@@ -83,9 +91,23 @@ export default function CalendarClient({ projects }: { projects: Project[] }) {
           <MonthGrid
             key={`month-${refreshKey}`}
             onDayClick={handleDayClick}
+            projects={projects}
           />
         )}
       </div>
+
+      {showAddEvent && (
+        <AddEventModal
+          date={selectedDay}
+          startSlotMin={9 * 60}
+          projects={projects}
+          onClose={() => setShowAddEvent(false)}
+          onCreated={() => {
+            setShowAddEvent(false);
+            handleRefresh();
+          }}
+        />
+      )}
 
       {showManage && (
         <ManageCategoriesModal

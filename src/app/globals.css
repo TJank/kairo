@@ -5,6 +5,47 @@
   --font-mono: var(--font-geist-mono);
 }
 
+:root {
+  --bg-base: #09090b;
+  --bg-nav: rgba(9, 9, 11, 0.8);
+  --text-base: #f4f4f5;
+}
+
+html.theme-nord {
+  --bg-base: #2e3440;
+  --bg-nav: rgba(46, 52, 64, 0.85);
+}
+
+html.theme-solarized {
+  --bg-base: #002b36;
+  --bg-nav: rgba(0, 43, 54, 0.85);
+}
+
+html.theme-forest {
+  --bg-base: #1c2118;
+  --bg-nav: rgba(28, 33, 24, 0.85);
+}
+
+html.theme-dusk {
+  --bg-base: #16131f;
+  --bg-nav: rgba(22, 19, 31, 0.85);
+}
+
+html.theme-light {
+  --bg-base: #f8fafc;
+  --bg-nav: rgba(248, 250, 252, 0.92);
+  --text-base: #18181b;
+  color-scheme: light;
+}
+
+html.theme-light body {
+  color: #18181b;
+}
+
+html.theme-light nav {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
 input[type="date"] {
   color-scheme: dark;
 }

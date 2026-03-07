@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   addMonths,
   endOfMonth,
@@ -14,6 +14,7 @@ import {
   eachDayOfInterval,
 } from "date-fns";
 import { colorClasses } from "@/app/calendar/colors";
+import EventPopover, { type PopoverEntry } from "@/app/calendar/EventPopover";
 
 type Entry = {
   kind: "event" | "task";
@@ -24,6 +25,7 @@ type Entry = {
   category: string;
   allDay?: boolean;
   done?: boolean;
+  recurring?: boolean;
   projectKey?: string;
   projectLabel?: string;
   projectColor?: string;
@@ -38,15 +40,20 @@ function displayPrefix(ev: Entry) {
   return label ? `${label}: ` : "";
 }
 
+type Project = { id: string; key: string; name: string; color: string };
+
 export default function MonthGrid({
   onDayClick,
+  projects = [],
 }: {
   onDayClick: (d: Date) => void;
+  projects?: Project[];
 }) {
   const [monthStart, setMonthStart] = useState(() => startOfMonth(new Date()));
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [popoverTarget, setPopoverTarget] = useState<{ entry: PopoverEntry; x: number; y: number } | null>(null);
 
   const gridStart = useMemo(
     () => startOfWeek(monthStart, { weekStartsOn: 0 }),
@@ -61,6 +68,25 @@ export default function MonthGrid({
     () => eachDayOfInterval({ start: gridStart, end: gridEnd }),
     [gridStart, gridEnd]
   );
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const from = gridStart.toISOString();
+      const to = gridEnd.toISOString();
+      const res = await fetch(
+        `/api/calendar/week?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+      );
+      const json = (await res.json()) as WeekResponse;
+      if (!res.ok) throw new Error("Request failed");
+      setEntries(json.entries ?? []);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [gridStart, gridEnd]);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +130,7 @@ export default function MonthGrid({
   }
 
   return (
+    <>
     <div className="rounded-3xl bg-white/5 p-6 ring-1 ring-white/10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -190,7 +217,7 @@ export default function MonthGrid({
                     {dayEntries.slice(0, MAX_CHIPS).map((ev) => (
                       <div
                         key={ev.id}
-                        className={`truncate rounded px-1.5 py-0.5 text-[10px] ring-1 ${
+                        className={`cursor-pointer truncate rounded px-1.5 py-0.5 text-[10px] ring-1 ${
                           ev.kind === "task"
                             ? ev.done
                               ? "bg-zinc-500/10 text-zinc-500 line-through ring-white/10"
@@ -198,6 +225,10 @@ export default function MonthGrid({
                             : colorClasses(ev.projectColor)
                         }`}
                         title={`${displayPrefix(ev)}${ev.title}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPopoverTarget({ entry: ev, x: e.clientX, y: e.clientY });
+                        }}
                       >
                         {displayPrefix(ev)}{ev.title}
                       </div>
@@ -217,5 +248,17 @@ export default function MonthGrid({
         {loading ? "Loading…" : `${entries.length} item(s) this month · Click a day for details.`}
       </div>
     </div>
+
+    {popoverTarget && (
+      <EventPopover
+        entry={popoverTarget.entry}
+        x={popoverTarget.x}
+        y={popoverTarget.y}
+        projects={projects}
+        onDismiss={() => setPopoverTarget(null)}
+        onRefresh={load}
+      />
+    )}
+    </>
   );
 }

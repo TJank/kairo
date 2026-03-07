@@ -2,37 +2,34 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-type Theme = "dark" | "light";
+export type Theme = "midnight" | "nord" | "solarized" | "forest" | "dusk" | "light";
+
+const ALL_THEMES: Theme[] = ["midnight", "nord", "solarized", "forest", "dusk", "light"];
 
 type ThemeCtx = {
   theme: Theme;
-  toggle: () => void;
   setTheme: (t: Theme) => void;
 };
 
 const Ctx = createContext<ThemeCtx | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("midnight");
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("dashboard-theme") as Theme | null;
-    if (saved === "light" || saved === "dark") setTheme(saved);
+    const saved = window.localStorage.getItem("kairo-theme") as Theme | null;
+    if (saved && (ALL_THEMES as string[]).includes(saved)) setTheme(saved as Theme);
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    window.localStorage.setItem("dashboard-theme", theme);
+    const html = document.documentElement;
+    ALL_THEMES.forEach((t) => html.classList.remove(`theme-${t}`));
+    html.classList.add(`theme-${theme}`);
+    html.classList.toggle("dark", theme !== "light");
+    window.localStorage.setItem("kairo-theme", theme);
   }, [theme]);
 
-  const value = useMemo(
-    () => ({
-      theme,
-      setTheme,
-      toggle: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
-    }),
-    [theme],
-  );
+  const value = useMemo(() => ({ theme, setTheme }), [theme]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
