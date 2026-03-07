@@ -42,34 +42,27 @@ export default async function TasksPage() {
         <TasksHeader projects={allProjects} />
       </div>
 
-      {projects.length === 0 && (byProject.get(null) ?? []).length === 0 ? (
+      {tasks.filter((t) => !t.done).length === 0 ? (
         <div className="mt-20 text-center">
-          <p className="text-zinc-500">No tasks yet.</p>
+          <p className="text-zinc-500">No open tasks.</p>
           <p className="mt-2 text-sm text-zinc-600">
-            Use "+ Add Section" to create a project group, then add tasks.
+            Click "+ Add Task" to get started, or "Sections" to create groups.
           </p>
         </div>
       ) : (
         <div className="mt-8 space-y-4">
-          {/* Project groups */}
           {projects.map((project) => {
             const projectTasks = (byProject.get(project.id) ?? []).map(serialize);
+            // Hide sections with no open tasks
+            if (projectTasks.filter((t) => !t.done).length === 0) return null;
             return (
               <TaskGroup
                 key={project.id}
                 project={project}
                 tasks={projectTasks}
-                allProjects={allProjects}
               />
             );
           })}
-
-          {/* Personal (no project) */}
-          <TaskGroup
-            project={null}
-            tasks={(byProject.get(null) ?? []).map(serialize)}
-            allProjects={allProjects}
-          />
         </div>
       )}
     </div>

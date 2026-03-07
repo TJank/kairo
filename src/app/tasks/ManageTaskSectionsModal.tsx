@@ -1,17 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createProject, updateProject, deleteProject } from "@/app/actions/calendar";
+import { createTaskSection, updateTaskSection, deleteTaskSection } from "@/app/actions/tasks";
 import { COLOR_OPTIONS, COLOR_SWATCH } from "@/app/calendar/colors";
 
-type Project = {
-  id: string;
-  key: string;
-  name: string;
-  color: string;
-};
+type Project = { id: string; key: string; name: string; color: string };
 
-export default function ManageCategoriesModal({
+export default function ManageTaskSectionsModal({
   projects,
   onClose,
 }: {
@@ -37,7 +32,7 @@ export default function ManageCategoriesModal({
   function handleEditSave() {
     if (!editingId) return;
     startTransition(async () => {
-      await updateProject(editingId, editName, editColor);
+      await updateTaskSection(editingId, editName, editColor);
       setEditingId(null);
     });
   }
@@ -46,7 +41,7 @@ export default function ManageCategoriesModal({
     e.preventDefault();
     setError("");
     startTransition(async () => {
-      const result = await createProject(newKey, newName, newColor);
+      const result = await createTaskSection(newKey, newName, newColor);
       if (result?.error) {
         setError(result.error);
         return;
@@ -63,7 +58,7 @@ export default function ManageCategoriesModal({
       return;
     }
     startTransition(async () => {
-      await deleteProject(id);
+      await deleteTaskSection(id);
       setDeleteConfirm(null);
     });
   }
@@ -73,7 +68,7 @@ export default function ManageCategoriesModal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg rounded-3xl bg-zinc-900 p-6 ring-1 ring-white/10 shadow-2xl max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Manage Categories</h2>
+          <h2 className="text-xl font-semibold">Manage Task Sections</h2>
           <button
             onClick={onClose}
             className="rounded-lg px-2 py-1 text-sm text-zinc-400 hover:bg-white/10"
@@ -82,16 +77,13 @@ export default function ManageCategoriesModal({
           </button>
         </div>
 
-        {/* Existing projects */}
+        {/* Existing sections */}
         <div className="mt-5 space-y-2">
           {projects.length === 0 && (
-            <p className="text-sm text-zinc-500 italic">No categories yet.</p>
+            <p className="text-sm text-zinc-500 italic">No task sections yet.</p>
           )}
           {projects.map((p) => (
-            <div
-              key={p.id}
-              className="rounded-xl bg-black/30 p-3 ring-1 ring-white/10"
-            >
+            <div key={p.id} className="rounded-xl bg-black/30 p-3 ring-1 ring-white/10">
               {editingId === p.id ? (
                 <div className="space-y-2">
                   <input
@@ -108,7 +100,9 @@ export default function ManageCategoriesModal({
                         onClick={() => setEditColor(c.value)}
                         title={c.value}
                         className={`h-6 w-6 rounded-full ${c.swatch} transition-all ${
-                          editColor === c.value ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900" : "opacity-60"
+                          editColor === c.value
+                            ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900"
+                            : "opacity-60"
                         }`}
                       />
                     ))}
@@ -131,13 +125,9 @@ export default function ManageCategoriesModal({
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`h-3 w-3 flex-shrink-0 rounded-full ${COLOR_SWATCH[p.color] ?? "bg-zinc-500"}`}
-                  />
+                  <div className={`h-3 w-3 flex-shrink-0 rounded-full ${COLOR_SWATCH[p.color] ?? "bg-zinc-500"}`} />
                   <span className="flex-1 text-sm font-medium">{p.name}</span>
-                  <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-zinc-400">
-                    {p.key}
-                  </span>
+                  <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-zinc-400">{p.key}</span>
                   <button
                     onClick={() => startEdit(p)}
                     className="rounded px-1.5 py-0.5 text-[10px] text-zinc-400 hover:bg-white/10"
@@ -175,7 +165,7 @@ export default function ManageCategoriesModal({
 
         {/* Create new */}
         <div className="mt-5 rounded-xl bg-black/20 p-4 ring-1 ring-white/10">
-          <h3 className="mb-3 text-sm font-medium text-zinc-300">Add new category</h3>
+          <h3 className="mb-3 text-sm font-medium text-zinc-300">Add new section</h3>
           <form onSubmit={handleCreate} className="space-y-3">
             <div className="flex gap-2">
               <input
@@ -188,7 +178,7 @@ export default function ManageCategoriesModal({
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Category name"
+                placeholder="Section name"
                 className="flex-1 rounded-lg bg-black/40 px-2 py-1.5 text-sm outline-none ring-1 ring-white/20 focus:ring-white/40"
               />
             </div>
@@ -200,7 +190,9 @@ export default function ManageCategoriesModal({
                   onClick={() => setNewColor(c.value)}
                   title={c.value}
                   className={`h-6 w-6 rounded-full ${c.swatch} transition-all ${
-                    newColor === c.value ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900" : "opacity-60 hover:opacity-100"
+                    newColor === c.value
+                      ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900"
+                      : "opacity-60 hover:opacity-100"
                   }`}
                 />
               ))}

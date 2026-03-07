@@ -65,17 +65,21 @@ enum Priority {
 }
 
 // Work project (FE, Athenahealth, TD, etc.) to drive color + grouping.
+// scope: "calendar" = calendar only, "tasks" = tasks only, "shared" = both
 model Project {
   id        String   @id @default(cuid())
-  key       String   @unique
+  key       String
   name      String
   color     String
+  scope     String   @default("calendar")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   events    Event[]
   recurring RecurringEvent[]
   tasks     Task[]
+
+  @@unique([key, scope])
 }
 
 model Event {

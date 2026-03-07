@@ -20,7 +20,10 @@ export async function getTasksGrouped() {
     },
   });
 
-  const projects = await prisma.project.findMany({ orderBy: { name: "asc" } });
+  const projects = await prisma.project.findMany({
+    where: { scope: { in: ["tasks", "shared"] } },
+    orderBy: { name: "asc" },
+  });
 
   const byProject = new Map<string | null, typeof tasks>();
   byProject.set(null, []);

@@ -1,40 +1,85 @@
-export default function KairoLogo({ size = 20 }: { size?: number }) {
-  const cx = size / 2;
-  const cy = size / 2;
-  const r = size / 2 - 1.5;
+// Three logo variants — swap the default export to switch which appears in the navbar + favicon.
 
-  // Hour hand at 10 o'clock (~300°), minute hand at 2 o'clock (~60°)
-  const hourAngle = (300 - 90) * (Math.PI / 180);
-  const minuteAngle = (60 - 90) * (Math.PI / 180);
-  const hourLen = r * 0.55;
-  const minuteLen = r * 0.75;
-
+export function HourglassLogo({ size = 20 }: { size?: number }) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox={`0 0 ${size} ${size}`}
+      viewBox="0 0 20 20"
       fill="none"
       stroke="currentColor"
+      strokeWidth="1.6"
       strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden="true"
     >
-      <circle cx={cx} cy={cy} r={r} strokeWidth={1.5} />
-      <line
-        x1={cx}
-        y1={cy}
-        x2={cx + hourLen * Math.cos(hourAngle)}
-        y2={cy + hourLen * Math.sin(hourAngle)}
-        strokeWidth={1.5}
+      {/* Outer hourglass outline */}
+      <path d="M3 2.5 L17 2.5 L10 10 L17 17.5 L3 17.5 L10 10 Z" />
+      {/* Sand accumulated in bottom — subtle fill */}
+      <path
+        d="M10 10 L16.5 17.5 L3.5 17.5 Z"
+        fill="currentColor"
+        fillOpacity="0.28"
+        stroke="none"
       />
-      <line
-        x1={cx}
-        y1={cy}
-        x2={cx + minuteLen * Math.cos(minuteAngle)}
-        y2={cy + minuteLen * Math.sin(minuteAngle)}
-        strokeWidth={1.5}
-      />
-      <circle cx={cx} cy={cy} r={1} fill="currentColor" strokeWidth={0} />
+      {/* Pinch-point dot */}
+      <circle cx="10" cy="10" r="0.8" fill="currentColor" stroke="none" />
     </svg>
   );
 }
+
+export function KLetterLogo({ size = 20 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {/* Vertical bar */}
+      <line x1="4.5" y1="3" x2="4.5" y2="17" />
+      {/* Upper diagonal — attaches slightly above center */}
+      <line x1="4.5" y1="9" x2="15.5" y2="3" />
+      {/* Lower diagonal — attaches slightly below center, wider spread */}
+      <line x1="4.5" y1="11" x2="15.5" y2="17" />
+    </svg>
+  );
+}
+
+export function CompassLogo({ size = 20 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {/* Outer ring */}
+      <circle cx="10" cy="10" r="8.5" />
+      {/* North needle — filled (the "true north" half) */}
+      <path
+        d="M10 3 L13.5 10 L6.5 10 Z"
+        fill="currentColor"
+        stroke="none"
+      />
+      {/* South needle — outlined only */}
+      <path d="M10 17 L13.5 10 L6.5 10 Z" />
+      {/* Center pivot */}
+      <circle cx="10" cy="10" r="1.4" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+// ← Change this export to switch the active logo everywhere:
+// HourglassLogo | KLetterLogo | CompassLogo
+export default HourglassLogo;

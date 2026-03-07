@@ -93,3 +93,33 @@ export async function deleteSubTask(id: string) {
   await prisma.subTask.delete({ where: { id } });
   revalidatePath("/tasks");
 }
+
+// ─── Task Sections ────────────────────────────────────────────────────────────
+
+export async function createTaskSection(key: string, name: string, color: string) {
+  const k = key.trim().toUpperCase();
+  const n = name.trim();
+  if (!k || !n) return { error: "Key and name are required" };
+
+  try {
+    const project = await prisma.project.create({
+      data: { key: k, name: n, color, scope: "tasks" },
+    });
+    revalidatePath("/tasks");
+    return { id: project.id };
+  } catch {
+    return { error: `Key "${k}" is already in use` };
+  }
+}
+
+export async function updateTaskSection(id: string, name: string, color: string) {
+  const n = name.trim();
+  if (!n) return { error: "Name is required" };
+  await prisma.project.update({ where: { id }, data: { name: n, color } });
+  revalidatePath("/tasks");
+}
+
+export async function deleteTaskSection(id: string) {
+  await prisma.project.delete({ where: { id } });
+  revalidatePath("/tasks");
+}

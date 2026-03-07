@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import {
-  createTask,
   toggleTask,
   deleteTask,
   updateTask,
@@ -44,14 +43,18 @@ const PRIORITY_BADGE: Record<Priority, string> = {
 };
 
 const PROJECT_COLOR_MAP: Record<string, string> = {
-  blue: "ring-blue-500/30 text-blue-300",
-  emerald: "ring-emerald-500/30 text-emerald-300",
-  rose: "ring-rose-500/30 text-rose-300",
-  amber: "ring-amber-500/30 text-amber-300",
+  blue:   "ring-blue-500/30 text-blue-300",
   purple: "ring-purple-500/30 text-purple-300",
+  green:  "ring-emerald-500/30 text-emerald-300",
+  red:    "ring-red-500/30 text-red-300",
+  yellow: "ring-yellow-500/30 text-yellow-300",
   orange: "ring-orange-500/30 text-orange-300",
-  green: "ring-green-500/30 text-green-300",
+  pink:   "ring-pink-500/30 text-pink-300",
+  teal:   "ring-teal-500/30 text-teal-300",
   indigo: "ring-indigo-500/30 text-indigo-300",
+  rose:   "ring-rose-500/30 text-rose-300",
+  lime:   "ring-lime-500/30 text-lime-300",
+  cyan:   "ring-cyan-500/30 text-cyan-300",
 };
 
 function formatDate(iso: string | null) {
@@ -309,39 +312,15 @@ function TaskRow({ task }: { task: Task }) {
 export default function TaskGroup({
   project,
   tasks,
-  allProjects,
 }: {
   project: Project;
   tasks: Task[];
-  allProjects: { id: string; key: string; name: string; color: string }[];
 }) {
   const [open, setOpen] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
-  const [newText, setNewText] = useState("");
-  const [newPriority, setNewPriority] = useState<Priority | "">("");
-  const [newDue, setNewDue] = useState("");
-  const [isPending, startTransition] = useTransition();
 
   const colorClass = project
     ? (PROJECT_COLOR_MAP[project.color] ?? "ring-white/10 text-zinc-100")
     : "ring-white/10 text-zinc-400";
-
-  function handleAddTask(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newText.trim()) return;
-    startTransition(async () => {
-      await createTask(
-        newText,
-        project?.id ?? null,
-        (newPriority as Priority) || null,
-        newDue || null
-      );
-      setNewText("");
-      setNewPriority("");
-      setNewDue("");
-      setShowAdd(false);
-    });
-  }
 
   return (
     <div className={`rounded-2xl bg-white/5 ring-1 ${colorClass.split(" ")[0]} overflow-hidden`}>
@@ -367,67 +346,12 @@ export default function TaskGroup({
 
       {open && (
         <div className="space-y-2 px-5 pb-5">
-          {tasks.length === 0 && !showAdd && (
+          {tasks.length === 0 && (
             <p className="text-sm text-zinc-500 italic py-2">No tasks.</p>
           )}
-
           {tasks.map((task) => (
             <TaskRow key={task.id} task={task} />
           ))}
-
-          {showAdd ? (
-            <form onSubmit={handleAddTask} className="mt-2 space-y-2 rounded-xl bg-black/30 p-3 ring-1 ring-white/10">
-              <input
-                value={newText}
-                onChange={(e) => setNewText(e.target.value)}
-                placeholder="Task description…"
-                className="w-full rounded-lg bg-black/40 px-2 py-1.5 text-sm outline-none ring-1 ring-white/20 focus:ring-white/40"
-                autoFocus
-                onKeyDown={(e) => e.key === "Escape" && setShowAdd(false)}
-              />
-              <div className="flex gap-2">
-                <select
-                  value={newPriority}
-                  onChange={(e) => setNewPriority(e.target.value as Priority | "")}
-                  className="rounded-lg bg-black/40 px-2 py-1.5 text-xs text-zinc-300 ring-1 ring-white/20 outline-none"
-                >
-                  <option value="">No priority</option>
-                  <option value="HIGH">High</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="LOW">Low</option>
-                </select>
-                <input
-                  type="date"
-                  value={newDue}
-                  onChange={(e) => setNewDue(e.target.value)}
-                  className="rounded-lg bg-black/40 px-2 py-1.5 text-xs text-zinc-100 ring-1 ring-white/20 outline-none"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="rounded-xl bg-white/15 px-4 py-1.5 text-xs hover:bg-white/20 disabled:opacity-50"
-                >
-                  {isPending ? "Adding…" : "Add task"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAdd(false)}
-                  className="rounded-xl bg-black/30 px-3 py-1.5 text-xs text-zinc-400 hover:bg-white/10"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <button
-              onClick={() => setShowAdd(true)}
-              className="mt-1 w-full rounded-xl py-2 text-xs text-zinc-500 hover:text-zinc-300 hover:bg-white/5 transition-colors text-left px-2"
-            >
-              + Add task
-            </button>
-          )}
         </div>
       )}
     </div>

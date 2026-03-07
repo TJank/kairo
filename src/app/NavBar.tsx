@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/app/theme/ThemeToggle";
-import KairoLogo from "@/app/KairoLogo";
+// Switch between HourglassLogo | KLetterLogo | CompassLogo to preview each
+import { CompassLogo as KairoLogo } from "@/app/KairoLogo";
 
 const NAV_LINKS = [
   { href: "/", label: "Whiteboard" },

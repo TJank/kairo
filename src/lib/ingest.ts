@@ -225,7 +225,7 @@ export async function ingestMessage(raw: string) {
 
     const { key, rest } = parseProjectKey(body);
     const project = key
-      ? await prisma.project.findUnique({ where: { key } })
+      ? await prisma.project.findFirst({ where: { key } })
       : null;
 
     if (mode === "todo") {
