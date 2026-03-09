@@ -16,6 +16,7 @@ type Entry = {
   kind: "event" | "task";
   id: string;
   title: string;
+  notes?: string | null;
   startAt: string;
   endAt: string;
   category: string;

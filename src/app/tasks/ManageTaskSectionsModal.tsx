@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { createTaskSection, updateTaskSection, deleteTaskSection } from "@/app/actions/tasks";
 import { COLOR_OPTIONS, COLOR_SWATCH } from "@/app/calendar/colors";
 
-type Project = { id: string; key: string; name: string; color: string };
+type Project = { id: string; key: string; name: string; color: string; scope: string };
 
 export default function ManageTaskSectionsModal({
   projects,
@@ -17,9 +17,11 @@ export default function ManageTaskSectionsModal({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
+  const [editShared, setEditShared] = useState(false);
   const [newKey, setNewKey] = useState("");
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("blue");
+  const [newShared, setNewShared] = useState(false);
   const [error, setError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -27,12 +29,13 @@ export default function ManageTaskSectionsModal({
     setEditingId(p.id);
     setEditName(p.name);
     setEditColor(p.color);
+    setEditShared(p.scope === "shared");
   }
 
   function handleEditSave() {
     if (!editingId) return;
     startTransition(async () => {
-      await updateTaskSection(editingId, editName, editColor);
+      await updateTaskSection(editingId, editName, editColor, editShared ? "shared" : "tasks");
       setEditingId(null);
     });
   }
@@ -41,7 +44,7 @@ export default function ManageTaskSectionsModal({
     e.preventDefault();
     setError("");
     startTransition(async () => {
-      const result = await createTaskSection(newKey, newName, newColor);
+      const result = await createTaskSection(newKey, newName, newColor, newShared ? "shared" : "tasks");
       if (result?.error) {
         setError(result.error);
         return;
@@ -49,6 +52,7 @@ export default function ManageTaskSectionsModal({
       setNewKey("");
       setNewName("");
       setNewColor("blue");
+      setNewShared(false);
     });
   }
 
@@ -107,6 +111,15 @@ export default function ManageTaskSectionsModal({
                       />
                     ))}
                   </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editShared}
+                      onChange={(e) => setEditShared(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span className="text-xs text-zinc-400">Also show in Calendar</span>
+                  </label>
                   <div className="flex gap-2">
                     <button
                       onClick={handleEditSave}
@@ -197,6 +210,15 @@ export default function ManageTaskSectionsModal({
                 />
               ))}
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={newShared}
+                onChange={(e) => setNewShared(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-xs text-zinc-400">Also show in Calendar</span>
+            </label>
             {error && <p className="text-xs text-rose-400">{error}</p>}
             <button
               type="submit"

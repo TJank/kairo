@@ -8,7 +8,9 @@ export async function createTask(
   text: string,
   projectId?: string | null,
   priority?: Priority | null,
-  dueDate?: string | null
+  dueDate?: string | null,
+  notes?: string | null,
+  dueAt?: string | null
 ) {
   const trimmed = text.trim();
   if (!trimmed) return { error: "Text is required" };
@@ -19,6 +21,8 @@ export async function createTask(
       projectId: projectId ?? null,
       priority: priority ?? null,
       dueDate: dueDate ? new Date(dueDate) : null,
+      notes: notes ?? null,
+      dueAt: dueAt ? new Date(dueAt) : null,
       category: projectId ? "WORK" : "PERSONAL",
     },
   });
@@ -30,7 +34,9 @@ export async function updateTask(
   id: string,
   text?: string,
   priority?: Priority | null,
-  dueDate?: string | null
+  dueDate?: string | null,
+  notes?: string | null,
+  dueAt?: string | null
 ) {
   const data: Record<string, unknown> = {};
   if (text !== undefined) {
@@ -40,6 +46,8 @@ export async function updateTask(
   }
   if (priority !== undefined) data.priority = priority;
   if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null;
+  if (notes !== undefined) data.notes = notes;
+  if (dueAt !== undefined) data.dueAt = dueAt ? new Date(dueAt) : null;
 
   await prisma.task.update({ where: { id }, data });
   revalidatePath("/tasks");
@@ -96,27 +104,31 @@ export async function deleteSubTask(id: string) {
 
 // ─── Task Sections ────────────────────────────────────────────────────────────
 
-export async function createTaskSection(key: string, name: string, color: string) {
+export async function createTaskSection(key: string, name: string, color: string, scope?: string) {
   const k = key.trim().toUpperCase();
   const n = name.trim();
   if (!k || !n) return { error: "Key and name are required" };
 
   try {
     const project = await prisma.project.create({
-      data: { key: k, name: n, color, scope: "tasks" },
+      data: { key: k, name: n, color, scope: scope ?? "tasks" },
     });
     revalidatePath("/tasks");
+    revalidatePath("/calendar");
     return { id: project.id };
   } catch {
     return { error: `Key "${k}" is already in use` };
   }
 }
 
-export async function updateTaskSection(id: string, name: string, color: string) {
+export async function updateTaskSection(id: string, name: string, color: string, scope?: string) {
   const n = name.trim();
   if (!n) return { error: "Name is required" };
-  await prisma.project.update({ where: { id }, data: { name: n, color } });
+  const data: Record<string, unknown> = { name: n, color };
+  if (scope !== undefined) data.scope = scope;
+  await prisma.project.update({ where: { id }, data });
   revalidatePath("/tasks");
+  revalidatePath("/calendar");
 }
 
 export async function deleteTaskSection(id: string) {

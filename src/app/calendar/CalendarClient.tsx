@@ -8,7 +8,7 @@ import ManageCategoriesModal from "./ManageCategoriesModal";
 import IngestInput from "./IngestInput";
 import AddEventModal from "./AddEventModal";
 
-type Project = { id: string; key: string; name: string; color: string };
+type Project = { id: string; key: string; name: string; color: string; scope: string };
 type View = "week" | "day" | "month";
 
 export default function CalendarClient({ projects }: { projects: Project[] }) {

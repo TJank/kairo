@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { createEvent, createProject } from "@/app/actions/calendar";
 import { COLOR_OPTIONS, COLOR_SWATCH } from "@/app/calendar/colors";
 
-type Project = { id: string; key: string; name: string; color: string };
+type Project = { id: string; key: string; name: string; color: string; scope?: string };
 
 const DAYS_OF_WEEK = [
   { label: "Su", value: 0 },
@@ -60,7 +60,12 @@ export default function AddEventModal({
   const [newKey, setNewKey] = useState("");
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("blue");
+  const [newGroupShared, setNewGroupShared] = useState(false);
   const [groupError, setGroupError] = useState("");
+
+  // Notes
+  const [notes, setNotes] = useState("");
+  const [showNotes, setShowNotes] = useState(false);
 
   // Recurrence
   const [recurrence, setRecurrence] = useState<"none" | "mon-fri" | "daily" | "custom">("none");
@@ -109,7 +114,7 @@ export default function AddEventModal({
 
       if (showNewGroup && newKey.trim() && newName.trim()) {
         const k = newKey.trim().toUpperCase();
-        const groupResult = await createProject(k, newName.trim(), newColor);
+        const groupResult = await createProject(k, newName.trim(), newColor, newGroupShared ? "shared" : "calendar");
         if (!groupResult || "error" in groupResult) {
           setGroupError(groupResult?.error ?? "Failed to create group");
           return;
@@ -122,7 +127,8 @@ export default function AddEventModal({
         buildStartAt(),
         buildEndAt(),
         projectId,
-        getRecurrenceDays()
+        getRecurrenceDays(),
+        notes || null
       );
       if (result?.error) { setError(result.error); return; }
       onCreated();
@@ -313,8 +319,38 @@ export default function AddEventModal({
                     />
                   ))}
                 </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newGroupShared}
+                    onChange={(e) => setNewGroupShared(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-xs text-zinc-400">Also show in Tasks</span>
+                </label>
                 {groupError && <p className="text-xs text-rose-400">{groupError}</p>}
               </div>
+            )}
+          </div>
+
+          {/* Notes */}
+          <div>
+            {showNotes ? (
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add a note…"
+                rows={3}
+                className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30 placeholder:text-zinc-500 resize-none"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowNotes(true)}
+                className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                + Add note
+              </button>
             )}
           </div>
 

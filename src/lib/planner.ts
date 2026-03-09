@@ -6,6 +6,7 @@ export type CalendarEntry =
       kind: "event";
       id: string;
       title: string;
+      notes?: string | null;
       startAt: string;
       endAt: string;
       category: string;
@@ -98,6 +99,7 @@ export async function getWeekEntries(from: Date, to: Date) {
     kind: "event",
     id: e.id,
     title: e.title,
+    notes: e.notes,
     startAt: e.startAt.toISOString(),
     endAt: e.endAt.toISOString(),
     category: e.category,

@@ -4,7 +4,7 @@ import { useState } from "react";
 import AddTaskModal from "@/app/tasks/AddTaskModal";
 import ManageTaskSectionsModal from "@/app/tasks/ManageTaskSectionsModal";
 
-type Project = { id: string; key: string; name: string; color: string };
+type Project = { id: string; key: string; name: string; color: string; scope: string };
 
 export default function TasksHeader({ projects }: { projects: Project[] }) {
   const [showAddTask, setShowAddTask] = useState(false);

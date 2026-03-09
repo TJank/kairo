@@ -9,6 +9,7 @@ type Project = {
   key: string;
   name: string;
   color: string;
+  scope: string;
 };
 
 export default function ManageCategoriesModal({
@@ -22,9 +23,11 @@ export default function ManageCategoriesModal({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
+  const [editShared, setEditShared] = useState(false);
   const [newKey, setNewKey] = useState("");
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("blue");
+  const [newShared, setNewShared] = useState(false);
   const [error, setError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -32,12 +35,13 @@ export default function ManageCategoriesModal({
     setEditingId(p.id);
     setEditName(p.name);
     setEditColor(p.color);
+    setEditShared(p.scope === "shared");
   }
 
   function handleEditSave() {
     if (!editingId) return;
     startTransition(async () => {
-      await updateProject(editingId, editName, editColor);
+      await updateProject(editingId, editName, editColor, editShared ? "shared" : "calendar");
       setEditingId(null);
     });
   }
@@ -46,7 +50,7 @@ export default function ManageCategoriesModal({
     e.preventDefault();
     setError("");
     startTransition(async () => {
-      const result = await createProject(newKey, newName, newColor);
+      const result = await createProject(newKey, newName, newColor, newShared ? "shared" : "calendar");
       if (result?.error) {
         setError(result.error);
         return;
@@ -54,6 +58,7 @@ export default function ManageCategoriesModal({
       setNewKey("");
       setNewName("");
       setNewColor("blue");
+      setNewShared(false);
     });
   }
 
@@ -113,6 +118,15 @@ export default function ManageCategoriesModal({
                       />
                     ))}
                   </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editShared}
+                      onChange={(e) => setEditShared(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span className="text-xs text-zinc-400">Also show in Tasks</span>
+                  </label>
                   <div className="flex gap-2">
                     <button
                       onClick={handleEditSave}
@@ -205,6 +219,15 @@ export default function ManageCategoriesModal({
                 />
               ))}
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={newShared}
+                onChange={(e) => setNewShared(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-xs text-zinc-400">Also show in Tasks</span>
+            </label>
             {error && <p className="text-xs text-rose-400">{error}</p>}
             <button
               type="submit"

@@ -25,6 +25,8 @@ type Task = {
   done: boolean;
   completedAt: string | null;
   dueDate: string | null;
+  dueAt: string | null;
+  notes: string | null;
   priority: Priority | null;
   subtasks: SubTask[];
 };
@@ -67,10 +69,12 @@ function formatDate(iso: string | null) {
 
 function TaskRow({ task }: { task: Task }) {
   const [expanded, setExpanded] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [editDue, setEditDue] = useState("");
   const [editPriority, setEditPriority] = useState<Priority | "">("");
+  const [editNotes, setEditNotes] = useState("");
   const [showAddSub, setShowAddSub] = useState(false);
   const [subText, setSubText] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -84,6 +88,7 @@ function TaskRow({ task }: { task: Task }) {
     setEditText(task.text);
     setEditDue(task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "");
     setEditPriority(task.priority ?? "");
+    setEditNotes(task.notes ?? "");
   }
 
   function handleEditSave(e: React.FormEvent) {
@@ -93,7 +98,8 @@ function TaskRow({ task }: { task: Task }) {
         task.id,
         editText,
         (editPriority as Priority) || null,
-        editDue || null
+        editDue || null,
+        editNotes || null
       );
       setEditingId(null);
     });
@@ -121,7 +127,7 @@ function TaskRow({ task }: { task: Task }) {
           className="w-full rounded-lg bg-black/40 px-2 py-1.5 text-sm outline-none ring-1 ring-white/20 focus:ring-white/40"
           autoFocus
         />
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <select
             value={editPriority}
             onChange={(e) => setEditPriority(e.target.value as Priority | "")}
@@ -139,6 +145,13 @@ function TaskRow({ task }: { task: Task }) {
             className="rounded-lg bg-black/40 px-2 py-1.5 text-xs text-zinc-100 ring-1 ring-white/20 outline-none"
           />
         </div>
+        <textarea
+          value={editNotes}
+          onChange={(e) => setEditNotes(e.target.value)}
+          placeholder="Notes (optional)…"
+          rows={2}
+          className="w-full rounded-lg bg-black/40 px-2 py-1.5 text-xs text-zinc-300 ring-1 ring-white/20 outline-none placeholder:text-zinc-600 resize-none focus:ring-white/40"
+        />
         <div className="flex gap-2">
           <button
             type="submit"
@@ -197,7 +210,35 @@ function TaskRow({ task }: { task: Task }) {
           {!task.done && task.dueDate && (
             <p className="mt-0.5 text-[11px] text-zinc-500">
               Due {formatDate(task.dueDate)}
+              {task.dueAt && (
+                <span className="ml-1">
+                  at {new Date(task.dueAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                </span>
+              )}
             </p>
+          )}
+
+          {task.notes && !showNotes && (
+            <button
+              onClick={() => setShowNotes(true)}
+              className="mt-1 flex items-center gap-1 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-zinc-500 inline-block" />
+              Note
+            </button>
+          )}
+          {showNotes && task.notes && (
+            <div className="mt-2 rounded-lg bg-black/30 px-2.5 py-2 text-xs text-zinc-300 ring-1 ring-white/10 whitespace-pre-wrap">
+              <div className="flex items-start justify-between gap-2">
+                <p>{task.notes}</p>
+                <button
+                  onClick={() => setShowNotes(false)}
+                  className="flex-shrink-0 text-zinc-600 hover:text-zinc-400 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
           )}
 
           {hasSubtasks && (

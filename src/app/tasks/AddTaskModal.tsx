@@ -5,7 +5,7 @@ import { createTask, createTaskSection } from "@/app/actions/tasks";
 import { COLOR_OPTIONS, COLOR_SWATCH } from "@/app/calendar/colors";
 
 type Priority = "HIGH" | "MEDIUM" | "LOW";
-type Project = { id: string; key: string; name: string; color: string };
+type Project = { id: string; key: string; name: string; color: string; scope?: string };
 
 const PRIORITIES: { value: Priority; label: string }[] = [
   { value: "HIGH", label: "High" },
@@ -27,12 +27,16 @@ export default function AddTaskModal({
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [priority, setPriority] = useState<Priority | null>(null);
   const [dueDate, setDueDate] = useState("");
+  const [dueTime, setDueTime] = useState("");
+  const [notes, setNotes] = useState("");
+  const [showNotes, setShowNotes] = useState(false);
 
   // Inline new-section form
   const [showNewSection, setShowNewSection] = useState(false);
   const [newKey, setNewKey] = useState("");
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("blue");
+  const [newSectionShared, setNewSectionShared] = useState(false);
   const [sectionError, setSectionError] = useState("");
 
   const [error, setError] = useState("");
@@ -50,6 +54,7 @@ export default function AddTaskModal({
           newKey.trim().toUpperCase(),
           newName.trim(),
           newColor,
+          newSectionShared ? "shared" : "tasks",
         );
         if (!result || "error" in result) {
           setSectionError(result?.error ?? "Failed to create section");
@@ -58,7 +63,13 @@ export default function AddTaskModal({
         sectionId = result.id;
       }
 
-      const result = await createTask(text, sectionId, priority, dueDate || null);
+      // Build dueAt from dueDate + dueTime
+      let dueAt: string | null = null;
+      if (dueDate && dueTime) {
+        dueAt = new Date(`${dueDate}T${dueTime}`).toISOString();
+      }
+
+      const result = await createTask(text, sectionId, priority, dueDate || null, notes || null, dueAt);
       if (result && "error" in result) { setError(result.error); return; }
       onClose();
     });
@@ -94,15 +105,47 @@ export default function AddTaskModal({
             {error && <p className="mt-1.5 text-xs text-rose-400">{error}</p>}
           </div>
 
-          {/* Due date */}
+          {/* Due date + time */}
           <div>
             <label className="block text-xs font-medium text-zinc-400 mb-1.5">Due date</label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
-            />
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => { setDueDate(e.target.value); if (!e.target.value) setDueTime(""); }}
+                className="rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+              />
+              {dueDate && (
+                <input
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => setDueTime(e.target.value)}
+                  placeholder="Time (optional)"
+                  className="rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30 text-zinc-300"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            {showNotes ? (
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add a note…"
+                rows={3}
+                className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30 placeholder:text-zinc-500 resize-none"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowNotes(true)}
+                className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                + Add note
+              </button>
+            )}
           </div>
 
           {/* Priority */}
@@ -206,6 +249,15 @@ export default function AddTaskModal({
                     />
                   ))}
                 </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newSectionShared}
+                    onChange={(e) => setNewSectionShared(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-xs text-zinc-400">Also show in Calendar</span>
+                </label>
                 {sectionError && <p className="text-xs text-rose-400">{sectionError}</p>}
               </div>
             )}

@@ -11,6 +11,7 @@ import EditEventModal from "./EditEventModal";
 export type PopoverEntry = {
   id: string;
   title: string;
+  notes?: string | null;
   startAt: string;
   endAt: string;
   recurring?: boolean;
@@ -105,6 +106,9 @@ export default function EventPopover({
           </p>
           {isRecurring && (
             <p className="mt-0.5 text-[10px] text-zinc-500">Recurring series</p>
+          )}
+          {entry.notes && (
+            <p className="mt-2 text-xs text-zinc-400 whitespace-pre-wrap">{entry.notes}</p>
           )}
         </div>
 

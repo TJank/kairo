@@ -228,8 +228,44 @@ export async function ingestMessage(raw: string) {
       ? await prisma.project.findFirst({ where: { key } })
       : null;
 
+    // "goal:" prefix → whiteboard GOALS item
+    if (/^\s*goal\s*[:\-]\s*/i.test(body)) {
+      const goalText = body.replace(/^\s*goal\s*[:\-]\s*/i, "").trim();
+      if (goalText) {
+        let goalsSection = await prisma.section.findFirst({ where: { type: "GOALS" } });
+        if (!goalsSection) {
+          goalsSection = await prisma.section.create({
+            data: { title: "Goals", type: "GOALS", order: 0 },
+          });
+        }
+        const maxOrder = await prisma.item.aggregate({
+          where: { sectionId: goalsSection.id },
+          _max: { order: true },
+        });
+        const item = await prisma.item.create({
+          data: {
+            sectionId: goalsSection.id,
+            text: goalText,
+            order: (maxOrder._max.order ?? 0) + 1,
+          },
+        });
+        created.push({ type: "goal", id: item.id, text: item.text });
+        continue;
+      }
+    }
+
     if (mode === "todo") {
-      const dueBefore = rest.match(/\b(before|by)\s+(mon|tue|tues|tuesday|wed|wednesday|thu|thurs|thursday|fri|friday|sat|saturday|sun|sunday)\b/i);
+      // Parse priority from text
+      const priorityMatch = rest.match(/\b(high|medium|low)\s+priority\b/i);
+      let priority: "HIGH" | "MEDIUM" | "LOW" | null = null;
+      let taskText = rest;
+      if (priorityMatch) {
+        const p = priorityMatch[1].toLowerCase();
+        priority = p === "high" ? "HIGH" : p === "medium" ? "MEDIUM" : "LOW";
+        taskText = normalize(rest.replace(priorityMatch[0], " "));
+      }
+
+      const dueBefore = taskText.match(/\b(before|by)\s+(mon|tue|tues|tuesday|wed|wednesday|thu|thurs|thursday|fri|friday|sat|saturday|sun|sunday)\b/i);
       let dueAt: Date | null = null;
       let dueDate: Date | null = null;
 
@@ -254,12 +290,13 @@ export async function ingestMessage(raw: string) {
         }
       }
 
-      const cleanText = normalize(rest.replace(/\b(before|by)\b.+$/i, "").trim() || rest);
+      const cleanText = normalize(taskText.replace(/\b(before|by)\b.+$/i, "").trim() || taskText);
       const t = await prisma.task.create({
         data: {
           text: cleanText,
           category: looksWorkRelated(part) ? "WORK" : "PERSONAL",
           projectId: project?.id,
+          priority: priority ?? undefined,
           dueAt: dueAt ?? undefined,
           dueDate: dueDate ?? undefined,
         },

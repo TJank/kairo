@@ -13,6 +13,8 @@ export default async function TasksPage() {
     done: t.done,
     completedAt: t.completedAt ? t.completedAt.toISOString() : null,
     dueDate: t.dueDate ? t.dueDate.toISOString() : null,
+    dueAt: t.dueAt ? t.dueAt.toISOString() : null,
+    notes: t.notes ?? null,
     priority: t.priority,
     subtasks: t.subtasks.map((s) => ({
       id: s.id,
@@ -27,6 +29,7 @@ export default async function TasksPage() {
     key: p.key,
     name: p.name,
     color: p.color,
+    scope: p.scope,
   }));
 
   return (

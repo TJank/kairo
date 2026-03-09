@@ -57,6 +57,7 @@ export default function EditEventModal({
 
   // Common fields
   const [title, setTitle] = useState(entry.title);
+  const [notes, setNotes] = useState(entry.notes ?? "");
   const [startTime, setStartTime] = useState(toTimeStr(entry.startAt));
   const [endTime, setEndTime] = useState(toTimeStr(entry.endAt));
   const [dateVal, setDateVal] = useState(toDateStr(entry.startAt));
@@ -79,10 +80,10 @@ export default function EditEventModal({
         setDays(data.days);
         const proj = projects.find((p) => p.id === data.projectId);
         setSelectedProjectId(data.projectId);
-        // Update times from DB's stored minutes (more accurate than entry display times)
         setStartTime(minsToTimeStr(data.startMin));
         setEndTime(minsToTimeStr(data.endMin));
-        void proj; // used above
+        if (data.notes) setNotes(data.notes);
+        void proj;
       }
       setLoading(false);
     });
@@ -113,7 +114,8 @@ export default function EditEventModal({
           timeStrToMins(startTime),
           timeStrToMins(endTime),
           days,
-          selectedProjectId
+          selectedProjectId,
+          notes || null
         );
       } else {
         const d = new Date(dateVal + "T00:00:00");
@@ -126,7 +128,8 @@ export default function EditEventModal({
           title,
           startAt.toISOString(),
           endAt.toISOString(),
-          selectedProjectId
+          selectedProjectId,
+          notes || null
         );
       }
       if (result?.error) { setError(result.error); return; }
@@ -229,6 +232,18 @@ export default function EditEventModal({
                 </div>
               </div>
             )}
+
+            {/* Notes */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-zinc-400">Notes</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add a note…"
+                rows={2}
+                className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30 placeholder:text-zinc-500 resize-none"
+              />
+            </div>
 
             {/* Group */}
             <div>

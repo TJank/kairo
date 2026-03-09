@@ -6,13 +6,13 @@ import { prisma } from "@/lib/prisma";
 
 // ─── Project / Category Actions ──────────────────────────────────────────────
 
-export async function createProject(key: string, name: string, color: string) {
+export async function createProject(key: string, name: string, color: string, scope?: string) {
   const k = key.trim().toUpperCase();
   const n = name.trim();
   if (!k || !n) return { error: "Key and name are required" };
 
   try {
-    const project = await prisma.project.create({ data: { key: k, name: n, color } });
+    const project = await prisma.project.create({ data: { key: k, name: n, color, scope: scope ?? "calendar" } });
     revalidatePath("/calendar");
     revalidatePath("/tasks");
     return { id: project.id };
@@ -21,7 +21,7 @@ export async function createProject(key: string, name: string, color: string) {
   }
 }
 
-export async function updateProject(id: string, name?: string, color?: string) {
+export async function updateProject(id: string, name?: string, color?: string, scope?: string) {
   const data: Record<string, unknown> = {};
   if (name !== undefined) {
     const n = name.trim();
@@ -29,6 +29,7 @@ export async function updateProject(id: string, name?: string, color?: string) {
     data.name = n;
   }
   if (color !== undefined) data.color = color;
+  if (scope !== undefined) data.scope = scope;
 
   await prisma.project.update({ where: { id }, data });
   revalidatePath("/calendar");
@@ -48,7 +49,8 @@ export async function createEvent(
   startAt: string,
   endAt: string,
   projectId?: string | null,
-  recurrenceDays?: number[]
+  recurrenceDays?: number[],
+  notes?: string | null
 ) {
   const t = title.trim();
   if (!t) return { error: "Title is required" };
@@ -70,6 +72,7 @@ export async function createEvent(
     await prisma.recurringEvent.create({
       data: {
         title: t,
+        notes: notes ?? null,
         category,
         projectId: projectId ?? null,
         startDate,
@@ -82,6 +85,7 @@ export async function createEvent(
     await prisma.event.create({
       data: {
         title: t,
+        notes: notes ?? null,
         category,
         projectId: projectId ?? null,
         startAt: start,
@@ -103,7 +107,8 @@ export async function updateEvent(
   title: string,
   startAt: string,
   endAt: string,
-  projectId?: string | null
+  projectId?: string | null,
+  notes?: string | null
 ) {
   const t = title.trim();
   if (!t) return { error: "Title is required" };
@@ -114,7 +119,7 @@ export async function updateEvent(
   const category = projectId ? "WORK" : "PERSONAL";
   await prisma.event.update({
     where: { id },
-    data: { title: t, startAt: start, endAt: end, projectId: projectId ?? null, category },
+    data: { title: t, startAt: start, endAt: end, projectId: projectId ?? null, category, notes: notes ?? null },
   });
   revalidatePath("/calendar");
 }
@@ -130,7 +135,8 @@ export async function updateRecurringEvent(
   startMin: number,
   endMin: number,
   days: number[],
-  projectId?: string | null
+  projectId?: string | null,
+  notes?: string | null
 ) {
   const t = title.trim();
   if (!t) return { error: "Title is required" };
@@ -141,6 +147,7 @@ export async function updateRecurringEvent(
     where: { id },
     data: {
       title: t,
+      notes: notes ?? null,
       startMin,
       endMin,
       category,
@@ -159,6 +166,7 @@ export async function getRecurringEventData(id: string) {
   if (!r) return null;
   return {
     title: r.title,
+    notes: r.notes,
     startMin: r.startMin,
     endMin: r.endMin,
     projectId: r.projectId,

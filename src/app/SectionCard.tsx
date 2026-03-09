@@ -138,6 +138,7 @@ export default function SectionCard({ section }: { section: Section }) {
   const [editDueDate, setEditDueDate] = useState("");
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState(section.title);
+  const [editColor, setEditColor] = useState(section.color ?? "");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const newInputRef = useRef<HTMLInputElement>(null);
 
@@ -189,13 +190,20 @@ export default function SectionCard({ section }: { section: Section }) {
   }
 
   function handleTitleSave() {
-    if (!titleVal.trim() || titleVal === section.title) {
+    if (!titleVal.trim()) {
       setEditingTitle(false);
       setTitleVal(section.title);
+      setEditColor(section.color ?? "");
+      return;
+    }
+    const colorChanged = editColor !== (section.color ?? "");
+    const titleChanged = titleVal !== section.title;
+    if (!titleChanged && !colorChanged) {
+      setEditingTitle(false);
       return;
     }
     startTransition(async () => {
-      await updateSection(section.id, titleVal);
+      await updateSection(section.id, titleVal, colorChanged ? (editColor || null) : undefined);
       setEditingTitle(false);
     });
   }
@@ -234,22 +242,56 @@ export default function SectionCard({ section }: { section: Section }) {
       } ${isPending ? "opacity-70 transition-opacity" : ""}`}
     >
       {/* Section header */}
-      <div className="flex items-center gap-2">
+      <div className="group flex items-center gap-2">
         {editingTitle ? (
-          <input
-            value={titleVal}
-            onChange={(e) => setTitleVal(e.target.value)}
-            onBlur={handleTitleSave}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleTitleSave();
-              if (e.key === "Escape") {
-                setEditingTitle(false);
-                setTitleVal(section.title);
-              }
-            }}
-            className="flex-1 rounded-lg bg-black/40 px-2 py-1 text-lg font-semibold outline-none ring-1 ring-white/20 focus:ring-white/40"
-            autoFocus
-          />
+          <div className="flex-1 space-y-2">
+            <input
+              value={titleVal}
+              onChange={(e) => setTitleVal(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleTitleSave();
+                if (e.key === "Escape") {
+                  setEditingTitle(false);
+                  setTitleVal(section.title);
+                  setEditColor(section.color ?? "");
+                }
+              }}
+              className="w-full rounded-lg bg-black/40 px-2 py-1 text-lg font-semibold outline-none ring-1 ring-white/20 focus:ring-white/40"
+              autoFocus
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-zinc-500">Color</span>
+              <button
+                type="button"
+                onClick={() => setEditColor("")}
+                title="No color"
+                className={`h-5 w-5 rounded-full border border-white/20 bg-zinc-700 transition-all ${editColor === "" ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900" : "opacity-50 hover:opacity-80"}`}
+              />
+              {Object.keys(COLOR_STYLES).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setEditColor(c)}
+                  title={c}
+                  className={`h-5 w-5 rounded-full ${getColorStyle(c).check} transition-all ${editColor === c ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900 opacity-100" : "opacity-50 hover:opacity-80"}`}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={handleTitleSave}
+                className="ml-2 rounded-lg bg-white/15 px-2 py-0.5 text-xs hover:bg-white/20 transition-colors"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => { setEditingTitle(false); setTitleVal(section.title); setEditColor(section.color ?? ""); }}
+                className="rounded-lg bg-black/30 px-2 py-0.5 text-xs text-zinc-400 hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         ) : (
           <h2
             className={`flex-1 text-lg font-semibold tracking-tight ${cs.accent} cursor-pointer`}

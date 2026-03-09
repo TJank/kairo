@@ -14,6 +14,7 @@ export default async function CalendarPage() {
     key: p.key,
     name: p.name,
     color: p.color,
+    scope: p.scope,
   }));
 
   return <CalendarClient projects={serializedProjects} />;
