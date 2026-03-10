@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { Priority } from "@prisma/client";
+import { getTimezone, parseDateInTz, parseDateTimeInTz } from "@/lib/timezone";
 
 export async function createTask(
   text: string,
@@ -15,14 +16,16 @@ export async function createTask(
   const trimmed = text.trim();
   if (!trimmed) return { error: "Text is required" };
 
+  const tz = await getTimezone();
+
   await prisma.task.create({
     data: {
       text: trimmed,
       projectId: projectId ?? null,
       priority: priority ?? null,
-      dueDate: dueDate ? new Date(dueDate) : null,
+      dueDate: dueDate ? parseDateInTz(dueDate, tz) : null,
       notes: notes ?? null,
-      dueAt: dueAt ? new Date(dueAt) : null,
+      dueAt: dueAt ? parseDateTimeInTz(dueAt.replace("T", " ").slice(0, 16), tz) : null,
       category: projectId ? "WORK" : "PERSONAL",
     },
   });
@@ -45,9 +48,12 @@ export async function updateTask(
     data.text = trimmed;
   }
   if (priority !== undefined) data.priority = priority;
-  if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null;
+  if (dueDate !== undefined || dueAt !== undefined) {
+    const tz = await getTimezone();
+    if (dueDate !== undefined) data.dueDate = dueDate ? parseDateInTz(dueDate, tz) : null;
+    if (dueAt !== undefined) data.dueAt = dueAt ? parseDateTimeInTz(dueAt.replace("T", " ").slice(0, 16), tz) : null;
+  }
   if (notes !== undefined) data.notes = notes;
-  if (dueAt !== undefined) data.dueAt = dueAt ? new Date(dueAt) : null;
 
   await prisma.task.update({ where: { id }, data });
   revalidatePath("/tasks");

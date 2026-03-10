@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { href: "/tasks", label: "Tasks" },
   { href: "/calendar", label: "Calendar" },
   { href: "/logbook", label: "Logbook" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export default function NavBar() {

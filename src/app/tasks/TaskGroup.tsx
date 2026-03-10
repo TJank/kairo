@@ -61,9 +61,11 @@ const PROJECT_COLOR_MAP: Record<string, string> = {
 
 function formatDate(iso: string | null) {
   if (!iso) return null;
+  // Force UTC so "2026-03-10T00:00:00Z" displays as "Mar 10", not "Mar 9" in negative-offset timezones
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   });
 }
 

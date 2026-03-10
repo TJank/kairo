@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { addDays, startOfDay } from "date-fns";
+import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
+import { format as fmtTz } from "date-fns-tz";
+import { getTimezone, parseDateInTz } from "@/lib/timezone";
 
 export type CalendarEntry =
   | {
@@ -10,7 +12,9 @@ export type CalendarEntry =
       startAt: string;
       endAt: string;
       category: string;
+      allDay?: boolean;
       recurring: boolean;
+      biweekly?: boolean;
       projectKey?: string;
       projectLabel?: string;
       projectColor?: string;
@@ -38,6 +42,7 @@ function minsToTime(date: Date, mins: number) {
 }
 
 export async function getWeekEntries(from: Date, to: Date) {
+  const tz = await getTimezone();
   // One-off events in range
   const events = await prisma.event.findMany({
     where: {
@@ -76,6 +81,35 @@ export async function getWeekEntries(from: Date, to: Date) {
       if (d < startOfDay(r.startDate)) continue;
       if (!days.has(d.getDay())) continue;
       if (exceptionDates.has(d.toISOString())) continue;
+      // Biweekly: only show on even-week occurrences relative to startDate
+      if (r.biweekly) {
+        const weeksSinceStart = Math.floor(
+          differenceInCalendarDays(d, startOfDay(r.startDate)) / 7
+        );
+        if (weeksSinceStart % 2 !== 0) continue;
+      }
+      if (r.allDay) {
+        const dateStr = fmtTz(d, "yyyy-MM-dd", { timeZone: "UTC" });
+        const startAt = parseDateInTz(dateStr, tz);
+        const endAt = addDays(startAt, 1);
+        recurringOccurrences.push({
+          kind: "event",
+          id: r.id + ":" + startAt.toISOString(),
+          title: r.title,
+          notes: r.notes,
+          startAt: startAt.toISOString(),
+          endAt: endAt.toISOString(),
+          category: r.category,
+          allDay: true,
+          recurring: true,
+          biweekly: r.biweekly,
+          projectKey: r.project?.key ?? undefined,
+          projectLabel: r.project?.name ?? undefined,
+          projectColor: r.project?.color ?? undefined,
+        });
+        continue;
+      }
+
       const startAt = minsToTime(d, r.startMin);
       const endAt = minsToTime(d, r.endMin);
       if (startAt >= to || endAt <= from) continue;
@@ -88,6 +122,7 @@ export async function getWeekEntries(from: Date, to: Date) {
         endAt: endAt.toISOString(),
         category: r.category,
         recurring: true,
+        biweekly: r.biweekly,
         projectKey: r.project?.key ?? undefined,
         projectLabel: r.project?.name ?? undefined,
         projectColor: r.project?.color ?? undefined,
@@ -103,6 +138,7 @@ export async function getWeekEntries(from: Date, to: Date) {
     startAt: e.startAt.toISOString(),
     endAt: e.endAt.toISOString(),
     category: e.category,
+    allDay: e.allDay,
     recurring: false,
     projectKey: e.project?.key ?? undefined,
     projectLabel: e.project?.name ?? undefined,
@@ -129,8 +165,11 @@ export async function getWeekEntries(from: Date, to: Date) {
       };
     }
 
-    const dueDate = t.dueDate ?? startOfDay(new Date());
-    const startAt = startOfDay(dueDate);
+    const dueDate = t.dueDate ?? new Date();
+    // Format the stored UTC date in the user's timezone to get the correct
+    // calendar date, then convert back to a midnight timestamp in that timezone.
+    const dateStr = fmtTz(dueDate, "yyyy-MM-dd", { timeZone: tz });
+    const startAt = parseDateInTz(dateStr, tz);
     const endAt = addDays(startAt, 1);
     return {
       kind: "task",

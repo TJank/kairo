@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { startOfDay } from "date-fns";
+import { addDays, startOfDay } from "date-fns";
 import { prisma } from "@/lib/prisma";
+import { getTimezone, parseDateInTz, parseDateTimeInTz } from "@/lib/timezone";
 
 // ─── Project / Category Actions ──────────────────────────────────────────────
 
@@ -50,44 +51,66 @@ export async function createEvent(
   endAt: string,
   projectId?: string | null,
   recurrenceDays?: number[],
-  notes?: string | null
+  notes?: string | null,
+  biweekly?: boolean,
+  allDay?: boolean
 ) {
   const t = title.trim();
   if (!t) return { error: "Title is required" };
 
-  const start = new Date(startAt);
-  const end = new Date(endAt);
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Invalid times" };
-  if (end <= start) return { error: "End must be after start" };
-
   const category = projectId ? "WORK" : "PERSONAL";
+  const tz = await getTimezone();
 
   if (recurrenceDays && recurrenceDays.length > 0) {
-    // Create recurring event
-    const startDate = new Date(start);
-    startDate.setHours(0, 0, 0, 0);
-    const startMin = start.getHours() * 60 + start.getMinutes();
-    const endMin = end.getHours() * 60 + end.getMinutes();
-
+    // Recurring event — startAt is "YYYY-MM-DD" for allDay, ISO string for timed
+    let startDate: Date;
+    let startMin = 0;
+    let endMin = 0;
+    if (allDay) {
+      startDate = parseDateInTz(startAt, tz);
+    } else {
+      const start = new Date(startAt);
+      if (isNaN(start.getTime())) return { error: "Invalid time" };
+      startDate = new Date(start);
+      startDate.setHours(0, 0, 0, 0);
+      startMin = start.getHours() * 60 + start.getMinutes();
+      const end = new Date(endAt);
+      endMin = end.getHours() * 60 + end.getMinutes();
+    }
     await prisma.recurringEvent.create({
       data: {
         title: t,
         notes: notes ?? null,
         category,
-        projectId: projectId ?? null,
+        ...(projectId ? { project: { connect: { id: projectId } } } : {}),
         startDate,
         startMin,
         endMin,
+        biweekly: biweekly ?? false,
+        allDay: allDay ?? false,
         days: { create: recurrenceDays.map((day) => ({ day })) },
       },
     });
   } else {
+    // One-off event
+    let start: Date;
+    let end: Date;
+    if (allDay) {
+      start = parseDateInTz(startAt, tz);
+      end = addDays(start, 1);
+    } else {
+      start = new Date(startAt);
+      end = new Date(endAt);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Invalid times" };
+      if (end <= start) return { error: "End must be after start" };
+    }
     await prisma.event.create({
       data: {
         title: t,
         notes: notes ?? null,
         category,
         projectId: projectId ?? null,
+        allDay: allDay ?? false,
         startAt: start,
         endAt: end,
       },
@@ -108,18 +131,27 @@ export async function updateEvent(
   startAt: string,
   endAt: string,
   projectId?: string | null,
-  notes?: string | null
+  notes?: string | null,
+  allDay?: boolean
 ) {
   const t = title.trim();
   if (!t) return { error: "Title is required" };
-  const start = new Date(startAt);
-  const end = new Date(endAt);
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Invalid times" };
-  if (end <= start) return { error: "End must be after start" };
   const category = projectId ? "WORK" : "PERSONAL";
+  const tz = await getTimezone();
+  let start: Date;
+  let end: Date;
+  if (allDay) {
+    start = parseDateInTz(startAt, tz);
+    end = addDays(start, 1);
+  } else {
+    start = new Date(startAt);
+    end = new Date(endAt);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Invalid times" };
+    if (end <= start) return { error: "End must be after start" };
+  }
   await prisma.event.update({
     where: { id },
-    data: { title: t, startAt: start, endAt: end, projectId: projectId ?? null, category, notes: notes ?? null },
+    data: { title: t, startAt: start, endAt: end, projectId: projectId ?? null, category, notes: notes ?? null, allDay: allDay ?? false },
   });
   revalidatePath("/calendar");
 }
@@ -136,7 +168,9 @@ export async function updateRecurringEvent(
   endMin: number,
   days: number[],
   projectId?: string | null,
-  notes?: string | null
+  notes?: string | null,
+  biweekly?: boolean,
+  allDay?: boolean
 ) {
   const t = title.trim();
   if (!t) return { error: "Title is required" };
@@ -148,10 +182,12 @@ export async function updateRecurringEvent(
     data: {
       title: t,
       notes: notes ?? null,
-      startMin,
-      endMin,
+      startMin: allDay ? 0 : startMin,
+      endMin: allDay ? 0 : endMin,
+      biweekly: biweekly ?? false,
+      allDay: allDay ?? false,
       category,
-      projectId: projectId ?? null,
+      project: projectId ? { connect: { id: projectId } } : { disconnect: true },
       days: { create: days.map((day) => ({ day })) },
     },
   });
@@ -169,6 +205,8 @@ export async function getRecurringEventData(id: string) {
     notes: r.notes,
     startMin: r.startMin,
     endMin: r.endMin,
+    biweekly: r.biweekly,
+    allDay: r.allDay,
     projectId: r.projectId,
     days: r.days.map((d) => d.day),
   };

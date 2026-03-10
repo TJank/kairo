@@ -7,6 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Settings ────────────────────────────────────────────────────────────────
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 // ─── Whiteboard ──────────────────────────────────────────────────────────────
 
 enum SectionType {
@@ -88,6 +96,7 @@ model Event {
   notes     String?
   category  Category @default(PERSONAL)
   projectId String?
+  allDay    Boolean  @default(false)
   startAt   DateTime
   endAt     DateTime
   createdAt DateTime @default(now())
@@ -109,6 +118,8 @@ model RecurringEvent {
   startDate DateTime
   startMin  Int
   endMin    Int
+  biweekly  Boolean  @default(false)
+  allDay    Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

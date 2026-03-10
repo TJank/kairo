@@ -67,9 +67,13 @@ export default function AddEventModal({
   const [notes, setNotes] = useState("");
   const [showNotes, setShowNotes] = useState(false);
 
+  // All day
+  const [allDay, setAllDay] = useState(false);
+
   // Recurrence
   const [recurrence, setRecurrence] = useState<"none" | "mon-fri" | "daily" | "custom">("none");
   const [customDays, setCustomDays] = useState<number[]>([]);
+  const [biweekly, setBiweekly] = useState(false);
 
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -104,7 +108,7 @@ export default function AddEventModal({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setError("Title is required"); return; }
-    if (timeStrToMins(endTime) <= timeStrToMins(startTime)) {
+    if (!allDay && timeStrToMins(endTime) <= timeStrToMins(startTime)) {
       setError("End time must be after start time");
       return;
     }
@@ -124,11 +128,13 @@ export default function AddEventModal({
 
       const result = await createEvent(
         title,
-        buildStartAt(),
-        buildEndAt(),
+        allDay ? dateVal : buildStartAt(),
+        allDay ? dateVal : buildEndAt(),
         projectId,
         getRecurrenceDays(),
-        notes || null
+        notes || null,
+        recurrence !== "none" ? biweekly : false,
+        allDay
       );
       if (result?.error) { setError(result.error); return; }
       onCreated();
@@ -167,34 +173,49 @@ export default function AddEventModal({
           </div>
 
           {/* Date + Time */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Date</label>
-              <input
-                type="date"
-                value={dateVal}
-                onChange={(e) => setDateVal(e.target.value)}
-                className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
-              />
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Date</label>
+                <input
+                  type="date"
+                  value={dateVal}
+                  onChange={(e) => setDateVal(e.target.value)}
+                  className="rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+                />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer mt-4">
+                <input
+                  type="checkbox"
+                  checked={allDay}
+                  onChange={(e) => setAllDay(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-xs text-zinc-400">All day</span>
+              </label>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Start</label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">End</label>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
-              />
-            </div>
+            {!allDay && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Start</label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">End</label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Recurrence */}
@@ -233,6 +254,22 @@ export default function AddEventModal({
                     {d.label}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {recurrence !== "none" && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => setBiweekly((v) => !v)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
+                    biweekly
+                      ? "bg-white/15 text-white ring-white/30"
+                      : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/8 hover:text-zinc-200"
+                  }`}
+                >
+                  Biweekly
+                </button>
               </div>
             )}
           </div>

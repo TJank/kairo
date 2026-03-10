@@ -14,7 +14,9 @@ export type PopoverEntry = {
   notes?: string | null;
   startAt: string;
   endAt: string;
+  allDay?: boolean;
   recurring?: boolean;
+  biweekly?: boolean;
   projectKey?: string;
   projectLabel?: string;
   projectColor?: string;
@@ -95,17 +97,29 @@ export default function EventPopover({
         <div className="mb-3 border-b border-white/8 pb-3">
           <p className="text-sm font-semibold text-zinc-100 truncate">{entry.title}</p>
           <p className="mt-0.5 text-xs text-zinc-400">
-            {new Date(entry.startAt).toLocaleString(undefined, {
-              weekday: "short", month: "short", day: "numeric",
-              hour: "numeric", minute: "2-digit",
-            })}
-            {" – "}
-            {new Date(entry.endAt).toLocaleTimeString(undefined, {
-              hour: "numeric", minute: "2-digit",
-            })}
+            {entry.allDay
+              ? new Date(entry.startAt).toLocaleDateString(undefined, {
+                  weekday: "short", month: "short", day: "numeric",
+                })
+              : <>
+                  {new Date(entry.startAt).toLocaleString(undefined, {
+                    weekday: "short", month: "short", day: "numeric",
+                    hour: "numeric", minute: "2-digit",
+                  })}
+                  {" – "}
+                  {new Date(entry.endAt).toLocaleTimeString(undefined, {
+                    hour: "numeric", minute: "2-digit",
+                  })}
+                </>
+            }
           </p>
+          {entry.allDay && (
+            <p className="mt-0.5 text-[10px] text-zinc-500">All day</p>
+          )}
           {isRecurring && (
-            <p className="mt-0.5 text-[10px] text-zinc-500">Recurring series</p>
+            <p className="mt-0.5 text-[10px] text-zinc-500">
+              {entry.biweekly ? "Biweekly recurring series" : "Recurring series"}
+            </p>
           )}
           {entry.notes && (
             <p className="mt-2 text-xs text-zinc-400 whitespace-pre-wrap">{entry.notes}</p>

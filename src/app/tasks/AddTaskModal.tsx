@@ -63,10 +63,10 @@ export default function AddTaskModal({
         sectionId = result.id;
       }
 
-      // Build dueAt from dueDate + dueTime
+      // Build dueAt from dueDate + dueTime (pass as local time string; server converts via timezone)
       let dueAt: string | null = null;
       if (dueDate && dueTime) {
-        dueAt = new Date(`${dueDate}T${dueTime}`).toISOString();
+        dueAt = `${dueDate}T${dueTime}`;
       }
 
       const result = await createTask(text, sectionId, priority, dueDate || null, notes || null, dueAt);

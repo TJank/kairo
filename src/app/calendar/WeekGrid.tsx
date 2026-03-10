@@ -25,6 +25,7 @@ type Entry = {
   allDay?: boolean;
   done?: boolean;
   recurring?: boolean;
+  biweekly?: boolean;
   projectKey?: string;
   projectLabel?: string;
   projectColor?: string;
@@ -380,8 +381,12 @@ export default function WeekGrid({
                               ? "bg-zinc-500/10 text-zinc-400 line-through ring-white/10"
                               : "bg-indigo-400/10 text-indigo-100 ring-indigo-300/20"
                             : colorClasses(ev.projectColor)
-                        }`}
+                        } ${ev.kind === "event" ? "cursor-pointer hover:brightness-125 transition-all" : ""}`}
                         title={ev.title}
+                        onClick={ev.kind === "event" ? (e) => {
+                          e.stopPropagation();
+                          setPopoverTarget({ entry: ev, x: e.clientX, y: e.clientY });
+                        } : undefined}
                       >
                         {displayPrefix(ev)}{ev.title}
                       </div>

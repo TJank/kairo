@@ -67,6 +67,8 @@ export default function EditEventModal({
 
   // Recurring-only
   const [days, setDays] = useState<number[]>([]);
+  const [biweekly, setBiweekly] = useState(false);
+  const [allDay, setAllDay] = useState(entry.allDay ?? false);
 
   // Loading state for recurring data fetch
   const [loading, setLoading] = useState(isRecurring);
@@ -83,6 +85,8 @@ export default function EditEventModal({
         setStartTime(minsToTimeStr(data.startMin));
         setEndTime(minsToTimeStr(data.endMin));
         if (data.notes) setNotes(data.notes);
+        setBiweekly(data.biweekly ?? false);
+        setAllDay(data.allDay ?? false);
         void proj;
       }
       setLoading(false);
@@ -96,7 +100,7 @@ export default function EditEventModal({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setError("Title is required"); return; }
-    if (timeStrToMins(endTime) <= timeStrToMins(startTime)) {
+    if (!allDay && timeStrToMins(endTime) <= timeStrToMins(startTime)) {
       setError("End time must be after start time");
       return;
     }
@@ -115,22 +119,21 @@ export default function EditEventModal({
           timeStrToMins(endTime),
           days,
           selectedProjectId,
-          notes || null
+          notes || null,
+          biweekly,
+          allDay
         );
       } else {
-        const d = new Date(dateVal + "T00:00:00");
-        const [sh, sm] = startTime.split(":").map(Number);
-        const [eh, em] = endTime.split(":").map(Number);
-        const startAt = new Date(d); startAt.setHours(sh, sm, 0, 0);
-        const endAt = new Date(d); endAt.setHours(eh, em, 0, 0);
-        result = await updateEvent(
-          entry.id,
-          title,
-          startAt.toISOString(),
-          endAt.toISOString(),
-          selectedProjectId,
-          notes || null
-        );
+        if (allDay) {
+          result = await updateEvent(entry.id, title, dateVal, dateVal, selectedProjectId, notes || null, true);
+        } else {
+          const d = new Date(dateVal + "T00:00:00");
+          const [sh, sm] = startTime.split(":").map(Number);
+          const [eh, em] = endTime.split(":").map(Number);
+          const startAt = new Date(d); startAt.setHours(sh, sm, 0, 0);
+          const endAt = new Date(d); endAt.setHours(eh, em, 0, 0);
+          result = await updateEvent(entry.id, title, startAt.toISOString(), endAt.toISOString(), selectedProjectId, notes || null, false);
+        }
       }
       if (result?.error) { setError(result.error); return; }
       onSaved();
@@ -177,59 +180,98 @@ export default function EditEventModal({
               {error && <p className="mt-1.5 text-xs text-rose-400">{error}</p>}
             </div>
 
-            {/* Date (one-off only) + Times */}
-            <div className={`grid gap-3 ${!isRecurring ? "grid-cols-3" : "grid-cols-2"}`}>
+            {/* Date (one-off only) + All day + Times */}
+            <div className="space-y-3">
               {!isRecurring && (
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-zinc-400">Date</label>
-                  <input
-                    type="date"
-                    value={dateVal}
-                    onChange={(e) => setDateVal(e.target.value)}
-                    className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
-                  />
+                <div className="flex items-center gap-4">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-400">Date</label>
+                    <input
+                      type="date"
+                      value={dateVal}
+                      onChange={(e) => setDateVal(e.target.value)}
+                      className="rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer mt-4">
+                    <input
+                      type="checkbox"
+                      checked={allDay}
+                      onChange={(e) => setAllDay(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span className="text-xs text-zinc-400">All day</span>
+                  </label>
                 </div>
               )}
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-zinc-400">Start</label>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-zinc-400">End</label>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
-                />
-              </div>
+              {isRecurring && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={allDay}
+                    onChange={(e) => setAllDay(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-xs text-zinc-400">All day</span>
+                </label>
+              )}
+              {!allDay && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-400">Start</label>
+                    <input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-400">End</label>
+                    <input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Days (recurring only) */}
             {isRecurring && (
-              <div>
-                <label className="mb-2 block text-xs font-medium text-zinc-400">Repeats on</label>
-                <div className="flex gap-1.5">
-                  {DAYS_OF_WEEK.map((d) => (
-                    <button
-                      key={d.value}
-                      type="button"
-                      onClick={() => toggleDay(d.value)}
-                      className={`h-9 w-9 rounded-full text-xs font-medium ring-1 transition-colors ${
-                        days.includes(d.value)
-                          ? "bg-white/20 text-white ring-white/40"
-                          : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/10"
-                      }`}
-                    >
-                      {d.label}
-                    </button>
-                  ))}
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-zinc-400">Repeats on</label>
+                  <div className="flex gap-1.5">
+                    {DAYS_OF_WEEK.map((d) => (
+                      <button
+                        key={d.value}
+                        type="button"
+                        onClick={() => toggleDay(d.value)}
+                        className={`h-9 w-9 rounded-full text-xs font-medium ring-1 transition-colors ${
+                          days.includes(d.value)
+                            ? "bg-white/20 text-white ring-white/40"
+                            : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/10"
+                        }`}
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setBiweekly((v) => !v)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
+                    biweekly
+                      ? "bg-white/15 text-white ring-white/30"
+                      : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/8 hover:text-zinc-200"
+                  }`}
+                >
+                  Biweekly
+                </button>
               </div>
             )}
 
