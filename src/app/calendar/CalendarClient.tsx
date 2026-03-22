@@ -72,7 +72,7 @@ export default function CalendarClient({ projects }: { projects: Project[] }) {
         <IngestInput onRefresh={handleRefresh} />
         {view === "week" && (
           <WeekGrid
-            key={refreshKey}
+            refreshKey={refreshKey}
             projects={projects}
             onRefresh={handleRefresh}
             onDayClick={handleDayClick}
@@ -80,7 +80,7 @@ export default function CalendarClient({ projects }: { projects: Project[] }) {
         )}
         {view === "day" && (
           <DayGrid
-            key={`day-${refreshKey}`}
+            refreshKey={refreshKey}
             selectedDay={selectedDay}
             onDayChange={setSelectedDay}
             projects={projects}
@@ -89,7 +89,7 @@ export default function CalendarClient({ projects }: { projects: Project[] }) {
         )}
         {view === "month" && (
           <MonthGrid
-            key={`month-${refreshKey}`}
+            refreshKey={refreshKey}
             onDayClick={handleDayClick}
             projects={projects}
           />

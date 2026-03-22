@@ -82,11 +82,13 @@ function displayPrefix(ev: Entry) {
 }
 
 export default function DayGrid({
+  refreshKey,
   selectedDay,
   onDayChange,
   projects = [],
   onRefresh,
 }: {
+  refreshKey?: number;
   selectedDay: Date;
   onDayChange: (d: Date) => void;
   projects?: Project[];
@@ -188,7 +190,7 @@ export default function DayGrid({
 
     doLoad();
     return () => { cancelled = true; };
-  }, [selectedDay, dayKey, slotCount]);
+  }, [selectedDay, dayKey, slotCount, refreshKey]);
 
   const allDayItems = useMemo(
     () => entries.filter((e) => e.allDay && format(parseISO(e.startAt), "yyyy-MM-dd") === dayKey),

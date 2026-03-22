@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -42,6 +42,10 @@ type Section = {
 export default function WhiteboardBoard({ sections: initialSections }: { sections: Section[] }) {
   const [showModal, setShowModal] = useState(false);
   const [sections, setSections] = useState(initialSections);
+
+  useEffect(() => {
+    setSections(initialSections);
+  }, [initialSections]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })

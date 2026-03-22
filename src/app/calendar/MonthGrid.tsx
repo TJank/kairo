@@ -43,9 +43,11 @@ function displayPrefix(ev: Entry) {
 type Project = { id: string; key: string; name: string; color: string };
 
 export default function MonthGrid({
+  refreshKey,
   onDayClick,
   projects = [],
 }: {
+  refreshKey?: number;
   onDayClick: (d: Date) => void;
   projects?: Project[];
 }) {
@@ -110,7 +112,7 @@ export default function MonthGrid({
     };
     doLoad();
     return () => { cancelled = true; };
-  }, [gridStart, gridEnd]);
+  }, [gridStart, gridEnd, refreshKey]);
 
   const entriesByDay = useMemo(() => {
     const map = new Map<string, Entry[]>();

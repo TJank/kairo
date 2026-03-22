@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useEffect, useState, useTransition, useRef } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -131,6 +131,11 @@ export default function SectionCard({ section }: { section: Section }) {
   const cs = getColorStyle(section.color);
   const [isPending, startTransition] = useTransition();
   const [items, setItems] = useState(section.items);
+
+  useEffect(() => {
+    setItems(section.items);
+  }, [section.items]);
+
   const [showAdd, setShowAdd] = useState(false);
   const [newText, setNewText] = useState("");
   const [newDueDate, setNewDueDate] = useState("");
@@ -299,7 +304,6 @@ export default function SectionCard({ section }: { section: Section }) {
             onDoubleClick={() => setEditingTitle(true)}
             title="Double-click to edit title"
           >
-            {isQuotes ? "❝ " : ""}
             {section.title}
           </h2>
         )}
@@ -422,7 +426,7 @@ export default function SectionCard({ section }: { section: Section }) {
                         <div className="min-w-0 flex-1">
                           {isQuotes ? (
                             <p className="text-sm italic text-zinc-300 leading-relaxed">
-                              "{item.text}"
+                              ❝{item.text}❞
                             </p>
                           ) : (
                             <p

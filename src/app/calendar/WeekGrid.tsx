@@ -85,10 +85,12 @@ function displayPrefix(ev: Entry) {
 }
 
 export default function WeekGrid({
+  refreshKey,
   projects = [],
   onRefresh,
   onDayClick,
 }: {
+  refreshKey?: number;
   projects?: Project[];
   onRefresh?: () => void;
   onDayClick?: (date: Date) => void;
@@ -202,7 +204,7 @@ export default function WeekGrid({
 
     doLoad();
     return () => { cancelled = true; };
-  }, [weekStart, weekEnd, slotCount]);
+  }, [weekStart, weekEnd, slotCount, refreshKey]);
 
   const allDayByDay = useMemo(() => {
     const map = new Map<string, Entry[]>();
