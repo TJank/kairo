@@ -25,8 +25,9 @@ import {
   deleteSection,
   reorderItems,
 } from "@/app/actions/whiteboard";
+import { SECTION_COLOR_STYLES, getSectionColorStyle } from "@/lib/colors";
 
-type SectionType = "QUOTES" | "GOALS" | "DREAMBOARD" | "NOTES";
+type SectionType = "QUOTES" | "GOALS" | "DREAMBOARD" | "NOTES" | "WIDGET";
 
 type Item = {
   id: string;
@@ -44,50 +45,11 @@ type Section = {
   color: string | null;
   order: number;
   fullWidth: boolean;
+  widgetType?: string | null;
+  widgetConfig?: string | null;
   items: Item[];
 };
 
-const COLOR_STYLES: Record<string, { ring: string; accent: string; check: string }> = {
-  blue: {
-    ring: "ring-blue-500/30",
-    accent: "text-blue-300",
-    check: "border-blue-400 bg-blue-400/80",
-  },
-  emerald: {
-    ring: "ring-emerald-500/30",
-    accent: "text-emerald-300",
-    check: "border-emerald-400 bg-emerald-400/80",
-  },
-  rose: {
-    ring: "ring-rose-500/30",
-    accent: "text-rose-300",
-    check: "border-rose-400 bg-rose-400/80",
-  },
-  amber: {
-    ring: "ring-amber-500/30",
-    accent: "text-amber-300",
-    check: "border-amber-400 bg-amber-400/80",
-  },
-  purple: {
-    ring: "ring-purple-500/30",
-    accent: "text-purple-300",
-    check: "border-purple-400 bg-purple-400/80",
-  },
-  orange: {
-    ring: "ring-orange-500/30",
-    accent: "text-orange-300",
-    check: "border-orange-400 bg-orange-400/80",
-  },
-};
-
-function getColorStyle(color: string | null) {
-  if (color && COLOR_STYLES[color]) return COLOR_STYLES[color];
-  return {
-    ring: "ring-white/10",
-    accent: "text-zinc-100",
-    check: "border-emerald-300 bg-emerald-400/80",
-  };
-}
 
 function formatDate(iso: string | null) {
   if (!iso) return null;
@@ -128,7 +90,7 @@ function SortableItem({
 }
 
 export default function SectionCard({ section }: { section: Section }) {
-  const cs = getColorStyle(section.color);
+  const cs = getSectionColorStyle(section.color);
   const [isPending, startTransition] = useTransition();
   const [items, setItems] = useState(section.items);
 
@@ -273,13 +235,13 @@ export default function SectionCard({ section }: { section: Section }) {
                 title="No color"
                 className={`h-5 w-5 rounded-full border border-white/20 bg-zinc-700 transition-all ${editColor === "" ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900" : "opacity-50 hover:opacity-80"}`}
               />
-              {Object.keys(COLOR_STYLES).map((c) => (
+              {Object.keys(SECTION_COLOR_STYLES).map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setEditColor(c)}
                   title={c}
-                  className={`h-5 w-5 rounded-full ${getColorStyle(c).check} transition-all ${editColor === c ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900 opacity-100" : "opacity-50 hover:opacity-80"}`}
+                  className={`h-5 w-5 rounded-full ${getSectionColorStyle(c).check} transition-all ${editColor === c ? "ring-2 ring-white ring-offset-1 ring-offset-zinc-900 opacity-100" : "opacity-50 hover:opacity-80"}`}
                 />
               ))}
               <button

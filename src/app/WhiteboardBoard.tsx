@@ -16,9 +16,10 @@ import {
 } from "@dnd-kit/sortable";
 import SectionCard from "./SectionCard";
 import AddSectionModal from "./AddSectionModal";
+import WidgetCard from "./widgets/WidgetCard";
 import { reorderSections } from "@/app/actions/whiteboard";
 
-type SectionType = "QUOTES" | "GOALS" | "DREAMBOARD" | "NOTES";
+type SectionType = "QUOTES" | "GOALS" | "DREAMBOARD" | "NOTES" | "WIDGET";
 
 type Item = {
   id: string;
@@ -36,10 +37,29 @@ type Section = {
   color: string | null;
   order: number;
   fullWidth: boolean;
+  widgetType: string | null;
+  widgetConfig: string | null;
   items: Item[];
 };
 
-export default function WhiteboardBoard({ sections: initialSections }: { sections: Section[] }) {
+type CalendarEvent = {
+  id: string;
+  title: string;
+  startAt: string;
+  endAt: string;
+  allDay: boolean;
+  projectKey?: string;
+  projectLabel?: string;
+  projectColor?: string;
+};
+
+export default function WhiteboardBoard({
+  sections: initialSections,
+  todayEvents = [],
+}: {
+  sections: Section[];
+  todayEvents?: CalendarEvent[];
+}) {
   const [showModal, setShowModal] = useState(false);
   const [sections, setSections] = useState(initialSections);
 
@@ -66,6 +86,25 @@ export default function WhiteboardBoard({ sections: initialSections }: { section
     const nextSections = [...quoteSections, ...reorderedOther];
     setSections(nextSections);
     reorderSections(nextSections.map((s) => s.id));
+  }
+
+  function renderSection(section: Section) {
+    if (section.type === "WIDGET") {
+      return (
+        <WidgetCard
+          section={{
+            id: section.id,
+            title: section.title,
+            color: section.color,
+            fullWidth: section.fullWidth,
+            widgetType: section.widgetType,
+            widgetConfig: section.widgetConfig,
+          }}
+          todayEvents={todayEvents}
+        />
+      );
+    }
+    return <SectionCard section={section} />;
   }
 
   return (
@@ -98,7 +137,7 @@ export default function WhiteboardBoard({ sections: initialSections }: { section
           {/* Quotes sections — always full width, not draggable */}
           {quoteSections.map((section) => (
             <div key={section.id}>
-              <SectionCard section={section} />
+              {renderSection(section)}
             </div>
           ))}
 
@@ -120,7 +159,7 @@ export default function WhiteboardBoard({ sections: initialSections }: { section
                       key={section.id}
                       className={section.fullWidth ? "col-span-2" : ""}
                     >
-                      <SectionCard section={section} />
+                      {renderSection(section)}
                     </div>
                   ))}
                 </div>

@@ -8,6 +8,7 @@ import { CompassLogo as KairoLogo } from "@/app/KairoLogo";
 
 const NAV_LINKS = [
   { href: "/today", label: "Today" },
+  { href: "/planner", label: "Planner" },
   { href: "/", label: "Whiteboard" },
   { href: "/tasks", label: "Tasks" },
   { href: "/calendar", label: "Calendar" },

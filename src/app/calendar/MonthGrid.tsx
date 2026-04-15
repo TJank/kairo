@@ -13,7 +13,7 @@ import {
   subMonths,
   eachDayOfInterval,
 } from "date-fns";
-import { colorClasses } from "@/app/calendar/colors";
+import { colorClasses } from "@/lib/colors";
 import EventPopover, { type PopoverEntry } from "@/app/calendar/EventPopover";
 
 type Entry = {

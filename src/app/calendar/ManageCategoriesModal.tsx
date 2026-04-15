@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createProject, updateProject, deleteProject } from "@/app/actions/calendar";
-import { COLOR_OPTIONS, COLOR_SWATCH } from "@/app/calendar/colors";
+import { COLOR_OPTIONS, COLOR_SWATCH } from "@/lib/colors";
 
 type Project = {
   id: string;

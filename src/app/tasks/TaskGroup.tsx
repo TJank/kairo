@@ -25,7 +25,7 @@ type Task = {
   done: boolean;
   completedAt: string | null;
   dueDate: string | null;
-  dueAt: string | null;
+  dueAllDay: boolean;
   notes: string | null;
   priority: Priority | null;
   subtasks: SubTask[];
@@ -212,9 +212,9 @@ function TaskRow({ task }: { task: Task }) {
           {!task.done && task.dueDate && (
             <p className="mt-0.5 text-[11px] text-zinc-500">
               Due {formatDate(task.dueDate)}
-              {task.dueAt && (
+              {!task.dueAllDay && (
                 <span className="ml-1">
-                  at {new Date(task.dueAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                  at {new Date(task.dueDate).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
                 </span>
               )}
             </p>

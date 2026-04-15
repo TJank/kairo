@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { SectionType } from "@prisma/client";
 
-export async function createSection(title: string, type: SectionType, color?: string) {
+export async function createSection(
+  title: string,
+  type: SectionType,
+  color?: string,
+  widgetType?: string,
+  widgetConfig?: string
+) {
   const trimmed = title.trim();
   if (!trimmed) return { error: "Title is required" };
 
@@ -16,6 +22,9 @@ export async function createSection(title: string, type: SectionType, color?: st
       type,
       color: color ?? null,
       order: (maxOrder._max.order ?? 0) + 1,
+      fullWidth: type === "WIDGET" ? true : false,
+      widgetType: type === "WIDGET" ? (widgetType ?? null) : null,
+      widgetConfig: type === "WIDGET" ? (widgetConfig ?? null) : null,
     },
   });
 

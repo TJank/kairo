@@ -8,7 +8,8 @@ import {
   getRecurringEventData,
 } from "@/app/actions/calendar";
 import type { PopoverEntry } from "./EventPopover";
-import { COLOR_SWATCH } from "@/app/calendar/colors";
+import { COLOR_SWATCH } from "@/lib/colors";
+import Modal, { ModalFooter, ModalFieldLabel } from "@/components/Modal";
 
 type Project = { id: string; key: string; name: string; color: string };
 
@@ -140,72 +141,45 @@ export default function EditEventModal({
     });
   }
 
+  const modalTitle = `Edit ${isRecurring ? "recurring series" : "event"}`;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-16">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+    <Modal title={modalTitle} onClose={onClose} size="md">
+      {isRecurring && (
+        <p className="-mt-3 mb-4 text-xs text-zinc-500">Changes apply to all future occurrences</p>
+      )}
 
-      <div className="relative w-full max-w-md rounded-3xl bg-zinc-900 shadow-2xl ring-1 ring-white/10">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/8 px-6 pt-6 pb-4">
+      {loading ? (
+        <div className="py-10 text-center text-sm text-zinc-500">Loading…</div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* Title */}
           <div>
-            <h2 className="text-xl font-semibold tracking-tight">
-              Edit {isRecurring ? "recurring series" : "event"}
-            </h2>
-            {isRecurring && (
-              <p className="mt-0.5 text-xs text-zinc-500">Changes apply to all future occurrences</p>
-            )}
+            <input
+              value={title}
+              onChange={(e) => { setTitle(e.target.value); setError(""); }}
+              placeholder="Event title"
+              autoFocus
+              className="w-full rounded-xl bg-black/40 px-4 py-3 text-base outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30 placeholder:text-zinc-500"
+            />
+            {error && <p className="mt-1.5 text-xs text-rose-400">{error}</p>}
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg px-2 py-1 text-sm text-zinc-400 hover:bg-white/10 transition-colors"
-          >
-            ✕
-          </button>
-        </div>
 
-        {loading ? (
-          <div className="px-6 py-10 text-center text-sm text-zinc-500">Loading…</div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-5 px-6 py-5">
-
-            {/* Title */}
-            <div>
-              <input
-                value={title}
-                onChange={(e) => { setTitle(e.target.value); setError(""); }}
-                placeholder="Event title"
-                autoFocus
-                className="w-full rounded-xl bg-black/40 px-4 py-3 text-base outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30 placeholder:text-zinc-500"
-              />
-              {error && <p className="mt-1.5 text-xs text-rose-400">{error}</p>}
-            </div>
-
-            {/* Date (one-off only) + All day + Times */}
-            <div className="space-y-3">
-              {!isRecurring && (
-                <div className="flex items-center gap-4">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-400">Date</label>
-                    <input
-                      type="date"
-                      value={dateVal}
-                      onChange={(e) => setDateVal(e.target.value)}
-                      className="rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
-                    />
-                  </div>
-                  <label className="flex items-center gap-2 cursor-pointer mt-4">
-                    <input
-                      type="checkbox"
-                      checked={allDay}
-                      onChange={(e) => setAllDay(e.target.checked)}
-                      className="rounded"
-                    />
-                    <span className="text-xs text-zinc-400">All day</span>
-                  </label>
+          {/* Date (one-off only) + All day + Times */}
+          <div className="space-y-3">
+            {!isRecurring && (
+              <div className="flex items-center gap-4">
+                <div>
+                  <ModalFieldLabel>Date</ModalFieldLabel>
+                  <input
+                    type="date"
+                    value={dateVal}
+                    onChange={(e) => setDateVal(e.target.value)}
+                    className="rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+                  />
                 </div>
-              )}
-              {isRecurring && (
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer mt-4">
                   <input
                     type="checkbox"
                     checked={allDay}
@@ -214,132 +188,133 @@ export default function EditEventModal({
                   />
                   <span className="text-xs text-zinc-400">All day</span>
                 </label>
-              )}
-              {!allDay && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-400">Start</label>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-400">End</label>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Days (recurring only) */}
-            {isRecurring && (
-              <div className="space-y-3">
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-zinc-400">Repeats on</label>
-                  <div className="flex gap-1.5">
-                    {DAYS_OF_WEEK.map((d) => (
-                      <button
-                        key={d.value}
-                        type="button"
-                        onClick={() => toggleDay(d.value)}
-                        className={`h-9 w-9 rounded-full text-xs font-medium ring-1 transition-colors ${
-                          days.includes(d.value)
-                            ? "bg-white/20 text-white ring-white/40"
-                            : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/10"
-                        }`}
-                      >
-                        {d.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setBiweekly((v) => !v)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
-                    biweekly
-                      ? "bg-white/15 text-white ring-white/30"
-                      : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/8 hover:text-zinc-200"
-                  }`}
-                >
-                  Biweekly
-                </button>
               </div>
             )}
+            {isRecurring && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={allDay}
+                  onChange={(e) => setAllDay(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-xs text-zinc-400">All day</span>
+              </label>
+            )}
+            {!allDay && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <ModalFieldLabel>Start</ModalFieldLabel>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+                  />
+                </div>
+                <div>
+                  <ModalFieldLabel>End</ModalFieldLabel>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
-            {/* Notes */}
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-zinc-400">Notes</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add a note…"
-                rows={2}
-                className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30 placeholder:text-zinc-500 resize-none"
-              />
+          {/* Days (recurring only) */}
+          {isRecurring && (
+            <div className="space-y-3">
+              <div>
+                <ModalFieldLabel>Repeats on</ModalFieldLabel>
+                <div className="flex gap-1.5 mt-0.5">
+                  {DAYS_OF_WEEK.map((d) => (
+                    <button
+                      key={d.value}
+                      type="button"
+                      onClick={() => toggleDay(d.value)}
+                      className={`h-9 w-9 rounded-full text-xs font-medium ring-1 transition-colors ${
+                        days.includes(d.value)
+                          ? "bg-white/20 text-white ring-white/40"
+                          : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/10"
+                      }`}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBiweekly((v) => !v)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
+                  biweekly
+                    ? "bg-white/15 text-white ring-white/30"
+                    : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/8 hover:text-zinc-200"
+                }`}
+              >
+                Biweekly
+              </button>
             </div>
+          )}
 
-            {/* Group */}
-            <div>
-              <label className="mb-2 block text-xs font-medium text-zinc-400">Group</label>
-              <div className="flex flex-wrap gap-2">
+          {/* Notes */}
+          <div>
+            <ModalFieldLabel>Notes</ModalFieldLabel>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add a note…"
+              rows={2}
+              className="w-full rounded-xl bg-black/40 px-3 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-white/30 placeholder:text-zinc-500 resize-none"
+            />
+          </div>
+
+          {/* Group */}
+          <div>
+            <ModalFieldLabel>Group</ModalFieldLabel>
+            <div className="flex flex-wrap gap-2 mt-0.5">
+              <button
+                type="button"
+                onClick={() => setSelectedProjectId(null)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
+                  selectedProjectId === null
+                    ? "bg-white/15 text-white ring-white/30"
+                    : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/8"
+                }`}
+              >
+                None
+              </button>
+              {projects.map((p) => (
                 <button
+                  key={p.id}
                   type="button"
-                  onClick={() => setSelectedProjectId(null)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
-                    selectedProjectId === null
+                  onClick={() => setSelectedProjectId(p.id)}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
+                    selectedProjectId === p.id
                       ? "bg-white/15 text-white ring-white/30"
                       : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/8"
                   }`}
                 >
-                  None
+                  <span className={`h-2 w-2 flex-shrink-0 rounded-full ${COLOR_SWATCH[p.color] ?? "bg-zinc-500"}`} />
+                  {p.name}
                 </button>
-                {projects.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setSelectedProjectId(p.id)}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
-                      selectedProjectId === p.id
-                        ? "bg-white/15 text-white ring-white/30"
-                        : "bg-black/30 text-zinc-400 ring-white/10 hover:bg-white/8"
-                    }`}
-                  >
-                    <span className={`h-2 w-2 flex-shrink-0 rounded-full ${COLOR_SWATCH[p.color] ?? "bg-zinc-500"}`} />
-                    {p.name}
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
+          </div>
 
-            {/* Footer */}
-            <div className="flex gap-3 pt-1">
-              <button
-                type="submit"
-                disabled={isPending}
-                className="flex-1 rounded-xl bg-white/15 py-2.5 text-sm font-semibold hover:bg-white/20 disabled:opacity-50 transition-colors"
-              >
-                {isPending ? "Saving…" : "Save Changes"}
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-xl bg-black/30 px-5 py-2.5 text-sm text-zinc-400 ring-1 ring-white/10 hover:bg-white/8 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+          {/* Footer */}
+          <ModalFooter
+            submitLabel="Save Changes"
+            pendingLabel="Saving…"
+            isPending={isPending}
+            onCancel={onClose}
+          />
+        </form>
+      )}
+    </Modal>
   );
 }

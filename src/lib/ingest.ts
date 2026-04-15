@@ -6,8 +6,7 @@ import {
   set,
   startOfDay,
 } from "date-fns";
-
-const TZ = process.env.DASH_TIMEZONE || "America/New_York";
+import { getTimezone } from "@/lib/timezone";
 
 const MONTH_MAP: Record<string, number> = {
   jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2,
@@ -266,8 +265,8 @@ export async function ingestMessage(raw: string) {
       }
 
       const dueBefore = taskText.match(/\b(before|by)\s+(mon|tue|tues|tuesday|wed|wednesday|thu|thurs|thursday|fri|friday|sat|saturday|sun|sunday)\b/i);
-      let dueAt: Date | null = null;
       let dueDate: Date | null = null;
+      let dueAllDay = true;
 
       if (dueBefore) {
         const word = dueBefore[1].toLowerCase();
@@ -283,9 +282,11 @@ export async function ingestMessage(raw: string) {
           const d = new Date(base);
           while (d.getDay() !== target) d.setDate(d.getDate() + 1);
           if (word === "before") {
-            dueAt = set(d, { hours: 17, minutes: 0, seconds: 0, milliseconds: 0 });
+            dueDate = set(d, { hours: 17, minutes: 0, seconds: 0, milliseconds: 0 });
+            dueAllDay = false;
           } else {
             dueDate = startOfDay(d);
+            dueAllDay = true;
           }
         }
       }
@@ -297,8 +298,8 @@ export async function ingestMessage(raw: string) {
           category: looksWorkRelated(part) ? "WORK" : "PERSONAL",
           projectId: project?.id,
           priority: priority ?? undefined,
-          dueAt: dueAt ?? undefined,
           dueDate: dueDate ?? undefined,
+          dueAllDay,
         },
       });
       created.push({ type: "task", id: t.id, text: t.text });
@@ -367,5 +368,6 @@ export async function ingestMessage(raw: string) {
     }
   }
 
-  return { created, tz: TZ };
+  const tz = await getTimezone();
+  return { created, tz };
 }

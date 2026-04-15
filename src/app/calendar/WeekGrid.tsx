@@ -10,7 +10,7 @@ import {
   startOfWeek,
   subWeeks,
 } from "date-fns";
-import { colorClasses } from "@/app/calendar/colors";
+import { colorClasses } from "@/lib/colors";
 import AddEventModal from "@/app/calendar/AddEventModal";
 import EventPopover, { type PopoverEntry } from "@/app/calendar/EventPopover";
 

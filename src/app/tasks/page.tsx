@@ -13,7 +13,7 @@ export default async function TasksPage() {
     done: t.done,
     completedAt: t.completedAt ? t.completedAt.toISOString() : null,
     dueDate: t.dueDate ? t.dueDate.toISOString() : null,
-    dueAt: t.dueAt ? t.dueAt.toISOString() : null,
+    dueAllDay: t.dueAllDay,
     notes: t.notes ?? null,
     priority: t.priority,
     subtasks: t.subtasks.map((s) => ({

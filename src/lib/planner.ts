@@ -53,15 +53,12 @@ export async function getWeekEntries(from: Date, to: Date) {
     include: { project: true },
   });
 
-  // Tasks due in range (time-based) OR all-day tasks with dueDate in range
+  // Tasks due in range
   const tasks = await prisma.task.findMany({
     where: {
-      OR: [
-        { dueAt: { gte: from, lt: to } },
-        { dueDate: { gte: startOfDay(from), lt: startOfDay(to) } },
-      ],
+      dueDate: { gte: startOfDay(from), lt: to },
     },
-    orderBy: [{ dueAt: "asc" }, { dueDate: "asc" }],
+    orderBy: { dueDate: "asc" },
     include: { project: true },
   });
 
@@ -146,9 +143,12 @@ export async function getWeekEntries(from: Date, to: Date) {
   }));
 
   const taskEntries: CalendarEntry[] = tasks.map((t) => {
-    if (t.dueAt) {
-      const startAt = t.dueAt;
-      const endAt = new Date(t.dueAt.getTime() + 30 * 60 * 1000);
+    const dueDate = t.dueDate ?? new Date();
+
+    if (!t.dueAllDay) {
+      // Timed task — show as 30-minute block at the specific time
+      const startAt = dueDate;
+      const endAt = new Date(dueDate.getTime() + 30 * 60 * 1000);
       return {
         kind: "task",
         id: t.id,
@@ -165,9 +165,7 @@ export async function getWeekEntries(from: Date, to: Date) {
       };
     }
 
-    const dueDate = t.dueDate ?? new Date();
-    // Format the stored UTC date in the user's timezone to get the correct
-    // calendar date, then convert back to a midnight timestamp in that timezone.
+    // All-day task — format in user's timezone to get the correct calendar date
     const dateStr = fmtTz(dueDate, "yyyy-MM-dd", { timeZone: tz });
     const startAt = parseDateInTz(dateStr, tz);
     const endAt = addDays(startAt, 1);

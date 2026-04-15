@@ -203,12 +203,229 @@
 
 ---
 
+## Phase 6 · Today View & Logbook
+> Daily focus view and completed-task history.
+
+**Today View (`/today`):**
+- [x] Dedicated `/today` route with nav link
+- [x] Shows today's calendar events grouped by: happening now, upcoming, past
+- [x] Shows tasks due today (by `dueDate` or `dueAt`)
+- [x] Real-time clock-based event categorization
+- [x] Task checkbox toggling with priority indicators
+- [x] Color-coded project badges
+
+**Logbook View (`/logbook`):**
+- [x] Dedicated `/logbook` route with nav link
+- [x] Completed tasks grouped by week ("Week of MMM d" labels)
+- [x] Project-based filtering via query parameters (`?section=projectId`)
+- [x] Priority badges and task notes display
+- [x] Completion date tracking
+
+---
+
+## Phase 7 · Calendar Views & Event Editing
+> Day view, month view, and full event editing.
+
+**Calendar Day View (DayGrid.tsx):**
+- [x] Single-day detailed view with hourly time slots (6am–8pm, 30-min intervals)
+- [x] Full event details with notes
+- [x] Click-to-create at time slots
+- [x] All-day event row at top
+- [x] Previous/next day navigation
+
+**Calendar Month View (MonthGrid.tsx):**
+- [x] Month calendar grid with day cells
+- [x] Clickable days for navigation
+- [x] Event popover on hover/click
+- [x] Month navigation (previous/next)
+
+**Event Editing (EditEventModal.tsx):**
+- [x] Edit title, notes, start/end time, date
+- [x] Category/project reassignment
+- [x] All-day event toggle
+- [x] Recurring event reconfiguration (days of week, biweekly toggle)
+- [x] Delete event action
+
+**Event Types:**
+- [x] All-day events (rendered in separate row)
+- [x] Biweekly recurring events
+- [x] Recurring event exceptions (cancel specific occurrences)
+- [x] Notes field on events
+
+---
+
+## Phase 8 · Settings & Timezone Support
+> User-configurable settings and timezone-aware infrastructure.
+
+**Settings Page (`/settings`):**
+- [x] Dedicated `/settings` route with nav link
+- [x] Timezone selector (9 timezone options: ET, CT, MT, PT, Alaska, Hawaii, London, Paris, UTC)
+- [x] Persistent timezone storage in database via `Setting` model
+- [x] "Saved!" confirmation feedback
+
+**Timezone Infrastructure:**
+- [x] Timezone conversion utilities (`fromZonedTime`, `toZonedTime`)
+- [x] Default to Eastern Time with `DASH_TIMEZONE` env override
+- [x] Applied globally for event display, due dates, and time parsing
+
+---
+
+## Phase 9 · Refactors & Code Quality
+> Reduce duplication, improve consistency, and clean up the data model.
+
+**Shared color palette (`src/lib/colors.ts`):**
+- [x] Extract all color definitions into a single `lib/colors.ts` module
+- [x] Export unified `COLOR_OPTIONS`, `COLOR_SWATCH`, `colorClasses()`, `SECTION_COLOR_OPTIONS`, `SECTION_COLOR_STYLES` from one place
+- [x] Update `AddSectionModal`, `AddEventModal`, `EditEventModal`, `AddTaskModal`, `ManageCategoriesModal`, `SectionCard` to import from `lib/colors.ts`
+- [x] Reduce old `calendar/colors.ts` to a re-export shim
+
+**Type-safe timezone handling:**
+- [x] Add request-level caching to `getTimezone()` via React `cache()` (one DB read per request)
+- [x] All server actions use the cached version
+- [x] Remove duplicate `DASH_TIMEZONE` fallback in `ingest.ts` — now uses shared `getTimezone()`
+
+**Shared modal & form components (`src/components/`):**
+- [x] Create `<Modal>` wrapper component (backdrop, centering, close behavior, Escape key)
+- [x] Create `<ModalInput>`, `<ModalFieldLabel>`, `<ModalFooter>` components
+- [x] Create `<ColorPicker>` component using shared palette
+- [x] Refactor `AddEventModal`, `EditEventModal`, `AddTaskModal`, `AddSectionModal` to use shared components
+
+**Consolidate Task `dueAt` / `dueDate`:**
+- [x] Replace `dueAt` + `dueDate` with single `dueDate` field + `dueAllDay` Boolean (mirrors Event model)
+- [x] Create Prisma migration (`20260330000000_consolidate_task_due`)
+- [x] Update `actions/tasks.ts`, `AddTaskModal`, `TaskGroup`, `planner.ts`, `ingest.ts`, `today/page.tsx`, `TodayClient`
+- [x] Remove old `dueAt` index
+
+**Domain-grouped server actions:**
+- [x] Split `actions/calendar.ts` into `actions/events.ts` and `actions/projects.ts`
+- [x] Move task-section project actions from `actions/tasks.ts` into `actions/projects.ts`
+- [x] `calendar.ts` and `tasks.ts` re-export from new modules for backwards compatibility
+
+---
+
+## Phase 10 · Dashboard Widgets
+> New WIDGET section type for the whiteboard — turns it into a true command center.
+
+**Schema:**
+- [x] Add `WIDGET` to `SectionType` enum
+- [x] Add `widgetType` String field on Section (e.g. `"countdown"`, `"upcoming-events"`, `"weather"`)
+- [x] Add `widgetConfig` String field on Section (JSON blob for widget-specific settings)
+- [x] Create Prisma migration (`20260330000001_widget_sections`)
+
+**Widget types:**
+- [x] **Upcoming Events** — shows today's remaining calendar events with times and project colors
+- [x] **Countdown** — countdown to a user-specified target date with label
+- [x] **Weather** — placeholder card (location display, ready for future API integration)
+
+**Whiteboard integration:**
+- [x] Widget sections render a `WidgetCard` component instead of an item list
+- [x] Add Section modal: when WIDGET type is selected, show widget type picker + config fields
+- [x] Widgets auto-refresh on page load (server-rendered, events fetched in `page.tsx`)
+
+---
+
+## Phase 11 · Daily Planner *(in progress)*
+> Hourly day planner for structured daily scheduling — paste LLM-generated plans, track completion, and measure focus.
+
+**Schema:**
+- [x] Add `PlanEntryStatus` enum: `PLANNED | COMPLETED | SKIPPED | CANCELLED`
+- [x] Add `PlanEntryCategory` enum: `DEEP_WORK | MEETING | ADMIN | PERSONAL_CARE | EXERCISE | MEAL | COMMUTE | SOCIAL | LEARNING | BREAK | OTHER`
+- [x] `DailyPlan` model: `id`, `date` (unique), `notes`, timestamps
+- [x] `PlanEntry` model: `planId`, `title`, `description`, `category`, `status`, `order`, `startMin`/`endMin` (minutes from midnight), `actualStartMin`/`actualEndMin`, `completedAt`, `eventId` (soft ref), timestamps
+- [x] Migration applied via `prisma db push`
+
+**Plan text parser (`src/lib/planParser.ts`):**
+- [x] Parse pasted LLM output into structured `ParsedPlanEntry[]` objects
+- [x] Support formats: `TIME - Title`, `TIME - TIME - Title`, markdown bullets, numbered lists, duration hints `(1 hour)`
+- [x] Support bare times without AM/PM (e.g. `8:15–8:30 Title`) with sequential AM/PM inference
+- [x] Support en-dash (`–`) as time range separator
+- [x] Keep full title text including dashes (no splitting at `–` or `-`)
+- [x] Date detection from first line of pasted text
+- [x] Auto-detect category from title keywords (gym → EXERCISE, meeting → MEETING, etc.)
+- [x] Infer missing end times from next entry's start time or duration hints
+- [x] Format helpers: `formatMin()`, `formatDuration()`, category labels/colors
+
+**Data layer (`src/lib/plannerData.ts`):**
+- [x] `getDailyPlan(dateStr)` — fetch plan with entries ordered by order + startMin
+- [x] `computeAnalytics(entries)` — completion rate, on-time rate, category breakdown
+
+**Server actions (`src/app/actions/planner.ts`):**
+- [x] `ensureDailyPlan(dateStr)` — get-or-create plan for a date
+- [x] `createPlanEntry(planId, title, startMin, endMin, category?, description?)`
+- [x] `bulkCreatePlanEntries(planId, entries[])` — batch insert from paste
+- [x] `updatePlanEntryStatus(id, status)` — sets `completedAt` on COMPLETED
+- [x] `updatePlanEntryActualTime(id, actualStartMin, actualEndMin)`
+- [x] `updatePlanEntry(id, title?, startMin?, endMin?, category?, description?)`
+- [x] `deletePlanEntry(id)`
+- [x] `deleteDailyPlan(planId)` — delete entire plan with cascade
+- [x] `updatePlanNotes(planId, notes)`
+- [x] `reorderPlanEntries(orderedIds[])`
+- [x] `getDayCalendarEvents(dateStr)` — fetch calendar events for cross-check
+- [x] `createCalendarEvent(dateStr, title, startMin, endMin, category)` — create calendar event from planner
+
+**Planner page (`/planner`):**
+- [x] Server component with date param support (`?date=YYYY-MM-DD`)
+- [x] Client component with date navigation (prev/next/today)
+- [x] Timeline view with entry rows showing time, title, category badge, status
+- [x] Status cycling on click: PLANNED → COMPLETED → SKIPPED → CANCELLED
+- [x] Visual states: green for completed, strikethrough for skipped/cancelled, dimmed for cancelled
+- [x] Hover actions: edit, delete (with confirmation), set actual time
+- [x] Inline edit mode for entries (title, time, category)
+- [x] Actual time pencil-in with inline time inputs
+- [x] Quick add input at bottom of list for unplanned items
+
+**Paste Modal (`PasteModal.tsx`):**
+- [x] Large textarea with format placeholder
+- [x] Parse → Preview → Save flow
+- [x] Preview shows parsed entries with editable categories
+- [x] Remove individual entries from preview before saving
+- [x] Bulk save creates all entries at once
+- [x] Date detection from first line (supports `4/7/2026`, `Monday April 7th 2026`, etc.)
+- [x] Auto-navigate to detected date on save
+- [x] Calendar cross-check: calendar events not in pasted text auto-added as suggestions (blue "From calendar" badge)
+- [x] Calendar cross-check: meeting-type entries not on calendar flagged with "Not on calendar" badge + option to create calendar event on save
+
+**Add Entry Modal (`AddEntryModal.tsx`):**
+- [x] Manual entry with title, start/end time, category toggle, description
+- [x] Auto-detect category from title as user types
+
+**Navigation:**
+- [x] "Planner" link added to NavBar after "Today"
+
+**Plan management:**
+- [x] Delete entire daily plan (two-click confirmation)
+- [x] Day-of-year counter in header (`Day 96 (268 remaining)`)
+- [x] Auto-ordering: entries sorted by startMin, then endMin, then title — applies on create, bulk create, and time edits
+- [x] Dedicated skip button (MinusCircle) alongside check button for marking missed items
+- [x] Actual time editor with styled inline inputs
+
+**Inline analytics:**
+- [x] Completion summary: X/Y completed, skipped count, cancelled count, % rate
+- [x] Category time breakdown bar (colored horizontal bar)
+- [x] Per-category time totals
+
+**Calendar integration:**
+- [x] Cross-check pasted plans against calendar events on parse
+- [x] Auto-suggest missing calendar events as plan entries
+- [x] Option to create calendar events from unmatched meeting entries on save
+
+**Future planner enhancements:** *(planned)*
+- [ ] Drag-and-drop reorder via @dnd-kit
+- [ ] Day notes/reflection textarea on DailyPlan
+- [ ] Plan templates — save a plan structure, apply to future days
+- [ ] Weekly/monthly analytics dashboard with trends and charts
+- [ ] Voice input via Web Speech API → parser pipeline
+- [ ] In-app LLM integration to generate plans from voice/text
+- [ ] Smart suggestions based on recurring patterns
+
+---
+
 ## V2 · Future Enhancements (not in current scope)
 > Planned but deferred to after core is stable.
 
 - [ ] **Whiteboard drag-and-drop** — drag sections to reorder; drag items within a section
 - [ ] **Whiteboard column spans** — sections can be set to full-width (Quotes) or half-width (Goals columns)
-- [ ] **Calendar day view** — single-day detailed view
-- [ ] **Calendar month view** — month overview
+- [x] **Calendar day view** — single-day detailed view *(done in Phase 7)*
+- [x] **Calendar month view** — month overview *(done in Phase 7)*
 - [ ] **Task recurring items** — tasks that repeat weekly/monthly
 - [ ] **Keyboard shortcuts** — power-user navigation

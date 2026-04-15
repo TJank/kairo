@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createTaskSection, updateTaskSection, deleteTaskSection } from "@/app/actions/tasks";
-import { COLOR_OPTIONS, COLOR_SWATCH } from "@/app/calendar/colors";
+import { COLOR_OPTIONS, COLOR_SWATCH } from "@/lib/colors";
 
 type Project = { id: string; key: string; name: string; color: string; scope: string };
 

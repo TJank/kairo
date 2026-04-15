@@ -1,10 +1,16 @@
 import { getDashboard } from "@/lib/dashboard";
+import { getWeekEntries } from "@/lib/planner";
+import { startOfDay, endOfDay } from "date-fns";
 import WhiteboardBoard from "./WhiteboardBoard";
 
 export const dynamic = "force-dynamic";
 
 export default async function WhiteboardPage() {
-  const sections = await getDashboard();
+  const now = new Date();
+  const [sections, todayEntries] = await Promise.all([
+    getDashboard(),
+    getWeekEntries(startOfDay(now), endOfDay(now)),
+  ]);
 
   const serialized = sections.map((s) => ({
     ...s,
@@ -22,5 +28,19 @@ export default async function WhiteboardPage() {
     return a.order - b.order;
   });
 
-  return <WhiteboardBoard sections={sorted} />;
+  // Today's calendar events for the upcoming-events widget
+  const todayEvents = todayEntries
+    .filter((e) => e.kind === "event")
+    .map((e) => ({
+      id: e.id,
+      title: e.title,
+      startAt: e.startAt,
+      endAt: e.endAt,
+      allDay: e.allDay ?? false,
+      projectKey: e.projectKey,
+      projectLabel: e.projectLabel,
+      projectColor: e.projectColor,
+    }));
+
+  return <WhiteboardBoard sections={sorted} todayEvents={todayEvents} />;
 }

@@ -1,17 +1,22 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
-import { fromZonedTime, toZonedTime, format as fmtTz } from "date-fns-tz";
+import { fromZonedTime, format as fmtTz } from "date-fns-tz";
 
 export const DEFAULT_TZ = "America/New_York";
 
-/** Reads the saved timezone from the DB, falling back to the env var then Eastern. */
-export async function getTimezone(): Promise<string> {
+/**
+ * Reads the saved timezone from the DB, falling back to the env var then Eastern.
+ * Cached per-request via React `cache()` — multiple calls in the same server
+ * request will only hit the DB once.
+ */
+export const getTimezone = cache(async (): Promise<string> => {
   try {
     const row = await prisma.setting.findUnique({ where: { key: "timezone" } });
     return row?.value ?? process.env.DASH_TIMEZONE ?? DEFAULT_TZ;
   } catch {
     return process.env.DASH_TIMEZONE ?? DEFAULT_TZ;
   }
-}
+});
 
 /**
  * Parse a date-input string ("YYYY-MM-DD") as midnight in the given timezone

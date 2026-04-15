@@ -15,12 +15,9 @@ export default async function TodayPage() {
     prisma.task.findMany({
       where: {
         done: false,
-        OR: [
-          { dueDate: { gte: from, lte: to } },
-          { dueAt: { gte: from, lte: to } },
-        ],
+        dueDate: { gte: from, lte: to },
       },
-      orderBy: [{ dueAt: "asc" }, { dueDate: "asc" }, { priority: "asc" }],
+      orderBy: [{ dueDate: "asc" }, { priority: "asc" }],
       include: { project: true },
     }),
   ]);
@@ -31,8 +28,8 @@ export default async function TodayPage() {
     notes: t.notes,
     done: t.done,
     priority: t.priority,
-    dueAt: t.dueAt ? t.dueAt.toISOString() : null,
     dueDate: t.dueDate ? t.dueDate.toISOString() : null,
+    dueAllDay: t.dueAllDay,
     project: t.project
       ? { id: t.project.id, key: t.project.key, name: t.project.name, color: t.project.color }
       : null,

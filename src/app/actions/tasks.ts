@@ -11,21 +11,32 @@ export async function createTask(
   priority?: Priority | null,
   dueDate?: string | null,
   notes?: string | null,
-  dueAt?: string | null
+  dueTime?: string | null
 ) {
   const trimmed = text.trim();
   if (!trimmed) return { error: "Text is required" };
 
   const tz = await getTimezone();
 
+  let parsedDueDate: Date | null = null;
+  let dueAllDay = true;
+
+  if (dueDate && dueTime) {
+    parsedDueDate = parseDateTimeInTz(`${dueDate}T${dueTime}`, tz);
+    dueAllDay = false;
+  } else if (dueDate) {
+    parsedDueDate = parseDateInTz(dueDate, tz);
+    dueAllDay = true;
+  }
+
   await prisma.task.create({
     data: {
       text: trimmed,
       projectId: projectId ?? null,
       priority: priority ?? null,
-      dueDate: dueDate ? parseDateInTz(dueDate, tz) : null,
+      dueDate: parsedDueDate,
+      dueAllDay,
       notes: notes ?? null,
-      dueAt: dueAt ? parseDateTimeInTz(dueAt.replace("T", " ").slice(0, 16), tz) : null,
       category: projectId ? "WORK" : "PERSONAL",
     },
   });
@@ -39,7 +50,7 @@ export async function updateTask(
   priority?: Priority | null,
   dueDate?: string | null,
   notes?: string | null,
-  dueAt?: string | null
+  dueTime?: string | null
 ) {
   const data: Record<string, unknown> = {};
   if (text !== undefined) {
@@ -48,10 +59,18 @@ export async function updateTask(
     data.text = trimmed;
   }
   if (priority !== undefined) data.priority = priority;
-  if (dueDate !== undefined || dueAt !== undefined) {
+  if (dueDate !== undefined) {
     const tz = await getTimezone();
-    if (dueDate !== undefined) data.dueDate = dueDate ? parseDateInTz(dueDate, tz) : null;
-    if (dueAt !== undefined) data.dueAt = dueAt ? parseDateTimeInTz(dueAt.replace("T", " ").slice(0, 16), tz) : null;
+    if (dueDate && dueTime) {
+      data.dueDate = parseDateTimeInTz(`${dueDate}T${dueTime}`, tz);
+      data.dueAllDay = false;
+    } else if (dueDate) {
+      data.dueDate = parseDateInTz(dueDate, tz);
+      data.dueAllDay = true;
+    } else {
+      data.dueDate = null;
+      data.dueAllDay = true;
+    }
   }
   if (notes !== undefined) data.notes = notes;
 
@@ -109,35 +128,22 @@ export async function deleteSubTask(id: string) {
 }
 
 // ─── Task Sections ────────────────────────────────────────────────────────────
+// Delegate to projects module (can't use bare re-exports in "use server" files)
+
+import {
+  createTaskSection as _createTaskSection,
+  updateTaskSection as _updateTaskSection,
+  deleteTaskSection as _deleteTaskSection,
+} from "./projects";
 
 export async function createTaskSection(key: string, name: string, color: string, scope?: string) {
-  const k = key.trim().toUpperCase();
-  const n = name.trim();
-  if (!k || !n) return { error: "Key and name are required" };
-
-  try {
-    const project = await prisma.project.create({
-      data: { key: k, name: n, color, scope: scope ?? "tasks" },
-    });
-    revalidatePath("/tasks");
-    revalidatePath("/calendar");
-    return { id: project.id };
-  } catch {
-    return { error: `Key "${k}" is already in use` };
-  }
+  return _createTaskSection(key, name, color, scope);
 }
 
 export async function updateTaskSection(id: string, name: string, color: string, scope?: string) {
-  const n = name.trim();
-  if (!n) return { error: "Name is required" };
-  const data: Record<string, unknown> = { name: n, color };
-  if (scope !== undefined) data.scope = scope;
-  await prisma.project.update({ where: { id }, data });
-  revalidatePath("/tasks");
-  revalidatePath("/calendar");
+  return _updateTaskSection(id, name, color, scope);
 }
 
 export async function deleteTaskSection(id: string) {
-  await prisma.project.delete({ where: { id } });
-  revalidatePath("/tasks");
+  return _deleteTaskSection(id);
 }

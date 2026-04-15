@@ -1,0 +1,222 @@
+ npm run dev
+
+> kairo@0.2.0 dev
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.72:3000
+- Environments: .env
+
+✓ Starting...
+✓ Ready in 888ms
+⚠ Cross origin request detected from 127.0.0.1 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+⨯ Error [PrismaClientInitializationError]: 
+Invalid `{imported module ./src/lib/prisma.ts}["prisma"].task.findMany()` invocation in
+/home/tjank/Desktop/projects/kairo/.next/dev/server/chunks/ssr/[root-of-the-server]__b771567f._.js:30:157
+
+  27 const ARCHIVE_DAYS = 7;
+  28 async function getTasksGrouped() {
+  29     const archiveCutoff = (0, {imported module ./nodemodules/date-fns/subDays.js}["subDays"])(new Date(), ARCHIVE_DAYS);
+→ 30     const tasks = await {imported module ./src/lib/prisma.ts}["prisma"].task.findMany(
+Prisma Client could not locate the Query Engine for runtime "debian-openssl-3.0.x".
+
+This happened because Prisma Client was generated for "darwin-arm64", but the actual deployment required "debian-openssl-3.0.x".
+Add "debian-openssl-3.0.x" to `binaryTargets` in the "schema.prisma" file and run `prisma generate` after saving it:
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+The following locations have been searched:
+  /home/tjank/Desktop/projects/kairo/node_modules/.prisma/client
+  /home/tjank/Desktop/projects/kairo/node_modules/@prisma/client
+  /Volumes/Desktop/projects/kairo/node_modules/@prisma/client
+  /tmp/prisma-engines
+  /home/tjank/Desktop/projects/kairo/prisma
+    at <unknown> (src/lib/tasks.ts:9:35)
+    at async getTasksGrouped (src/lib/tasks.ts:9:17)
+    at async TasksPage (src/app/tasks/page.tsx:8:42)
+   7 |   const archiveCutoff = subDays(new Date(), ARCHIVE_DAYS);
+   8 |
+>  9 |   const tasks = await prisma.task.findMany({
+     |                                   ^
+  10 |     where: {
+  11 |       OR: [
+  12 |         { done: false }, {
+  clientVersion: '6.19.2',
+  errorCode: undefined,
+  retryable: undefined,
+  digest: '2381017088'
+}
+⨯ Error [PrismaClientInitializationError]: 
+Invalid `{imported module ./src/lib/prisma.ts}["prisma"].dailyPlan.findUnique()` invocation in
+/home/tjank/Desktop/projects/kairo/.next/dev/server/chunks/ssr/[root-of-the-server]__82cef742._.js:32:161
+
+  29 async function getDailyPlan(dateStr) {
+  30     const tz = await (0, {imported module ./src/lib/timezone.ts}["getTimezone"])();
+  31     const date = (0, {imported module ./src/lib/timezone.ts}["parseDateInTz"])(dateStr, tz);
+→ 32     const plan = await {imported module ./src/lib/prisma.ts}["prisma"].dailyPlan.findUnique(
+Prisma Client could not locate the Query Engine for runtime "debian-openssl-3.0.x".
+
+This happened because Prisma Client was generated for "darwin-arm64", but the actual deployment required "debian-openssl-3.0.x".
+Add "debian-openssl-3.0.x" to `binaryTargets` in the "schema.prisma" file and run `prisma generate` after saving it:
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+The following locations have been searched:
+  /home/tjank/Desktop/projects/kairo/node_modules/.prisma/client
+  /home/tjank/Desktop/projects/kairo/node_modules/@prisma/client
+  /Volumes/Desktop/projects/kairo/node_modules/@prisma/client
+  /tmp/prisma-engines
+  /home/tjank/Desktop/projects/kairo/prisma
+    at <unknown> (src/lib/plannerData.ts:50:39)
+    at async getDailyPlan (src/lib/plannerData.ts:50:16)
+    at async PlannerPage (src/app/planner/page.tsx:14:16)
+  48 |   const date = parseDateInTz(dateStr, tz);
+  49 |
+> 50 |   const plan = await prisma.dailyPlan.findUnique({
+     |                                       ^
+  51 |     where: { date },
+  52 |     include: {
+  53 |       entries: { orderBy: [{ order: "asc" }, { startMin: "asc" }] }, {
+  clientVersion: '6.19.2',
+  errorCode: undefined,
+  retryable: undefined,
+  digest: '1787068909'
+}
+ GET /tasks 500 in 1068ms (compile: 404ms, render: 664ms)
+ GET /planner 500 in 1085ms (compile: 552ms, render: 533ms)
+⨯ Error [PrismaClientInitializationError]: 
+Invalid `{imported module ./src/lib/prisma.ts}["prisma"].dailyPlan.findUnique()` invocation in
+/home/tjank/Desktop/projects/kairo/.next/dev/server/chunks/ssr/[root-of-the-server]__82cef742._.js:32:161
+
+  29 async function getDailyPlan(dateStr) {
+  30     const tz = await (0, {imported module ./src/lib/timezone.ts}["getTimezone"])();
+  31     const date = (0, {imported module ./src/lib/timezone.ts}["parseDateInTz"])(dateStr, tz);
+→ 32     const plan = await {imported module ./src/lib/prisma.ts}["prisma"].dailyPlan.findUnique(
+Prisma Client could not locate the Query Engine for runtime "debian-openssl-3.0.x".
+
+This happened because Prisma Client was generated for "darwin-arm64", but the actual deployment required "debian-openssl-3.0.x".
+Add "debian-openssl-3.0.x" to `binaryTargets` in the "schema.prisma" file and run `prisma generate` after saving it:
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+The following locations have been searched:
+  /home/tjank/Desktop/projects/kairo/node_modules/.prisma/client
+  /home/tjank/Desktop/projects/kairo/node_modules/@prisma/client
+  /Volumes/Desktop/projects/kairo/node_modules/@prisma/client
+  /tmp/prisma-engines
+  /home/tjank/Desktop/projects/kairo/prisma
+    at <unknown> (src/lib/plannerData.ts:50:39)
+    at async getDailyPlan (src/lib/plannerData.ts:50:16)
+    at async PlannerPage (src/app/planner/page.tsx:14:16)
+  48 |   const date = parseDateInTz(dateStr, tz);
+  49 |
+> 50 |   const plan = await prisma.dailyPlan.findUnique({
+     |                                       ^
+  51 |     where: { date },
+  52 |     include: {
+  53 |       entries: { orderBy: [{ order: "asc" }, { startMin: "asc" }] }, {
+  clientVersion: '6.19.2',
+  errorCode: undefined,
+  retryable: undefined,
+  digest: '4209099020'
+}
+ GET /planner 500 in 150ms (compile: 6ms, render: 144ms)
+⚠ Cross origin request detected from 192.168.1.72 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+⨯ Error [PrismaClientInitializationError]: 
+Invalid `{imported module ./src/lib/prisma.ts}["prisma"].section.findMany()` invocation in
+/home/tjank/Desktop/projects/kairo/.next/dev/server/chunks/ssr/[root-of-the-server]__99456713._.js:26:147
+
+  23 var {imported module ./src/lib/prisma.ts} = __turbopack_context__.i("[project]/src/lib/prisma.ts [app-rsc] (ecmascript)");
+  24 ;
+  25 async function getDashboard() {
+→ 26     return {imported module ./src/lib/prisma.ts}["prisma"].section.findMany(
+Prisma Client could not locate the Query Engine for runtime "debian-openssl-3.0.x".
+
+This happened because Prisma Client was generated for "darwin-arm64", but the actual deployment required "debian-openssl-3.0.x".
+Add "debian-openssl-3.0.x" to `binaryTargets` in the "schema.prisma" file and run `prisma generate` after saving it:
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+The following locations have been searched:
+  /home/tjank/Desktop/projects/kairo/node_modules/.prisma/client
+  /home/tjank/Desktop/projects/kairo/node_modules/@prisma/client
+  /Volumes/Desktop/projects/kairo/node_modules/@prisma/client
+  /tmp/prisma-engines
+  /home/tjank/Desktop/projects/kairo/prisma
+    at <unknown> (src/lib/dashboard.ts:4:25)
+    at async WhiteboardPage (src/app/page.tsx:10:36)
+  2 |
+  3 | export async function getDashboard() {
+> 4 |   return prisma.section.findMany({
+    |                         ^
+  5 |     orderBy: [{ type: "asc" }, { order: "asc" }],
+  6 |     include: { items: { orderBy: { order: "asc" } } },
+  7 |   }); {
+  clientVersion: '6.19.2',
+  errorCode: undefined,
+  retryable: undefined,
+  digest: '31026854'
+}
+ GET / 500 in 171ms (compile: 47ms, render: 123ms)
+
+
+
+## Error Type
+Runtime PrismaClientInitializationError
+
+## Error Message
+
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$prisma$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].dailyPlan.findUnique()` invocation in
+/home/tjank/Desktop/projects/kairo/.next/dev/server/chunks/ssr/[root-of-the-server]__82cef742._.js:32:161
+
+  29 async function getDailyPlan(dateStr) {
+  30     const tz = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$timezone$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["getTimezone"])();
+  31     const date = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$timezone$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["parseDateInTz"])(dateStr, tz);
+→ 32     const plan = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$prisma$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].dailyPlan.findUnique(
+Prisma Client could not locate the Query Engine for runtime "debian-openssl-3.0.x".
+
+This happened because Prisma Client was generated for "darwin-arm64", but the actual deployment required "debian-openssl-3.0.x".
+Add "debian-openssl-3.0.x" to `binaryTargets` in the "schema.prisma" file and run `prisma generate` after saving it:
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+The following locations have been searched:
+  /home/tjank/Desktop/projects/kairo/node_modules/.prisma/client
+  /home/tjank/Desktop/projects/kairo/node_modules/@prisma/client
+  /Volumes/Desktop/projects/kairo/node_modules/@prisma/client
+  /tmp/prisma-engines
+  /home/tjank/Desktop/projects/kairo/prisma
+
+
+    at <unknown> (src/lib/plannerData.ts:50:39)
+    at  getDailyPlan (src/lib/plannerData.ts:50:16)
+    at  PlannerPage (src/app/planner/page.tsx:14:16)
+
+## Code Frame
+  48 |   const date = parseDateInTz(dateStr, tz);
+  49 |
+> 50 |   const plan = await prisma.dailyPlan.findUnique({
+     |                                       ^
+  51 |     where: { date },
+  52 |     include: {
+  53 |       entries: { orderBy: [{ order: "asc" }, { startMin: "asc" }] },
+
+Next.js version: 16.1.6 (Turbopack)

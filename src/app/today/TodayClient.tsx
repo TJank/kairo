@@ -21,8 +21,8 @@ type Task = {
   notes: string | null;
   done: boolean;
   priority: string | null;
-  dueAt: string | null;
   dueDate: string | null;
+  dueAllDay: boolean;
   project: { id: string; key: string; name: string; color: string } | null;
 };
 
@@ -117,9 +117,9 @@ function TaskItem({ task }: { task: Task }) {
             <span className="text-[10px] text-zinc-500">{task.project.name}</span>
           )}
         </div>
-        {task.dueAt && (
+        {task.dueDate && !task.dueAllDay && (
           <p className="mt-0.5 text-[11px] text-zinc-500">
-            at {formatTime(task.dueAt)}
+            at {formatTime(task.dueDate)}
           </p>
         )}
         {task.notes && (
